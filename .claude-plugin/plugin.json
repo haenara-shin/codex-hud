@@ -1,0 +1,21 @@
+{
+  "name": "codex-hud",
+  "description": "Display OpenAI Codex API usage and costs inside Claude Code",
+  "version": "0.1.0",
+  "author": {
+    "name": "Haenara Shin"
+  },
+  "commands": [
+    "./commands/setup.md",
+    "./commands/usage-today.md",
+    "./commands/usage-week.md",
+    "./commands/usage-month.md",
+    "./commands/costs-today.md",
+    "./commands/costs-week.md",
+    "./commands/costs-month.md",
+    "./commands/summary.md"
+  ],
+  "homepage": "https://github.com/haenara-shin/codex-hud",
+  "license": "MIT",
+  "keywords": ["codex", "openai", "usage", "costs", "hud", "claude-code"]
+}
