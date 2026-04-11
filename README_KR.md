@@ -4,6 +4,7 @@
 [![GitHub forks](https://img.shields.io/github/forks/haenara-shin/codex-hud?style=social)](https://github.com/haenara-shin/codex-hud/network/members)
 [![GitHub watchers](https://img.shields.io/github/watchers/haenara-shin/codex-hud?style=social)](https://github.com/haenara-shin/codex-hud/watchers)
 [![GitHub license](https://img.shields.io/github/license/haenara-shin/codex-hud)](https://github.com/haenara-shin/codex-hud/blob/main/LICENSE)
+
 **[English / 영어](README.md)**
 
 [Claude Code](https://claude.ai/code)에서 OpenAI Codex 사용량과 레이트 리밋을 바로 확인할 수 있는 플러그인입니다.
