@@ -4,8 +4,6 @@
 [![GitHub forks](https://img.shields.io/github/forks/haenara-shin/codex-hud?style=social)](https://github.com/haenara-shin/codex-hud/network/members)
 [![GitHub watchers](https://img.shields.io/github/watchers/haenara-shin/codex-hud?style=social)](https://github.com/haenara-shin/codex-hud/watchers)
 [![GitHub license](https://img.shields.io/github/license/haenara-shin/codex-hud)](https://github.com/haenara-shin/codex-hud/blob/main/LICENSE)
-[![Star History Chart](https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date)](https://star-history.com/#haenara-shin/codex-hud&Date)
-
 **[English / 영어](README.md)**
 
 [Claude Code](https://claude.ai/code)에서 OpenAI Codex 사용량과 레이트 리밋을 바로 확인할 수 있는 플러그인입니다.
@@ -156,3 +154,13 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 ## 라이선스
 
 MIT
+
+## Star History
+
+<a href="https://star-history.com/#haenara-shin/codex-hud&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date&theme=dark" width="600" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date" width="600" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date" width="600" />
+ </picture>
+</a>
