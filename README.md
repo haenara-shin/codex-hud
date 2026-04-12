@@ -52,10 +52,10 @@ cd codex-hud
 npm install && npm run build
 ```
 
-Then in Claude Code, add the local directory as a marketplace and install:
+Then in Claude Code:
 
 ```
-/plugin marketplace add /path/to/codex-hud
+/plugin marketplace add haenara-shin/codex-hud
 /plugin install codex-hud@codex-hud
 ```
 

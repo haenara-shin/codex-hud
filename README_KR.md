@@ -52,10 +52,10 @@ cd codex-hud
 npm install && npm run build
 ```
 
-Claude Code에서 로컬 디렉토리를 마켓플레이스로 추가하고 설치:
+Claude Code에서:
 
 ```
-/plugin marketplace add /path/to/codex-hud
+/plugin marketplace add haenara-shin/codex-hud
 /plugin install codex-hud@codex-hud
 ```
 
