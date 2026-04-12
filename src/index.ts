@@ -246,7 +246,7 @@ async function handleCosts(args: string[]): Promise<void> {
     return;
   }
 
-  const rows: Array<{ date?: string; model: string; cost: number }> = [];
+  const rows: Array<{ date?: string; lineItem: string; cost: number }> = [];
 
   for (const bucket of result.data.data) {
     const bucketDate = daily
@@ -257,20 +257,20 @@ async function handleCosts(args: string[]): Promise<void> {
       if (!r.line_item && !r.amount?.value) continue;
       rows.push({
         date: bucketDate,
-        model: r.line_item ?? "unknown",
+        lineItem: r.line_item ?? "unknown",
         cost: r.amount?.value ?? 0,
       });
     }
   }
 
   if (!daily) {
-    // Aggregate by model
-    const byModel = new Map<string, number>();
+    // Aggregate by line item
+    const byItem = new Map<string, number>();
     for (const row of rows) {
-      byModel.set(row.model, (byModel.get(row.model) ?? 0) + row.cost);
+      byItem.set(row.lineItem, (byItem.get(row.lineItem) ?? 0) + row.cost);
     }
-    const aggregated = Array.from(byModel.entries()).map(
-      ([model, cost]) => ({ model, cost }),
+    const aggregated = Array.from(byItem.entries()).map(
+      ([lineItem, cost]) => ({ lineItem, cost }),
     );
     console.log(formatCostsTable(aggregated));
   } else {

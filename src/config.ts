@@ -31,6 +31,7 @@ export function saveConfig(config: PluginConfig): void {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true, mode: 0o700 });
   }
+  chmodSync(dir, 0o700);
   const configPath = getConfigPath();
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n", {
     mode: 0o600,

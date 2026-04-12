@@ -25,7 +25,7 @@ If you use [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) to deleg
 - **Real-time statusline**: Integrates with [claude-hud](https://github.com/jarrodwatts/claude-hud) to show Codex Usage/Weekly rate limits alongside Claude Code's own statusline
 - **Slash commands**: Dedicated commands for usage, costs, and summary
 - **Dual data sources**: Local Codex CLI session logs (no API key needed) + OpenAI Usage API (optional, for dollar costs)
-- **Zero runtime dependencies**: Only uses Node.js built-in modules
+- **Zero npm runtime dependencies**: Only uses Node.js built-in modules (statusline wrapper requires Bash and Perl)
 - **Graceful degradation**: Works with just local logs if no API key is configured
 
 ## Statusline Integration
@@ -124,7 +124,7 @@ Rate limit: 6.0% (5h) / 14.0% (7d) | Plan: team
 
 ### `/codex-hud:costs-today` / `costs-week` / `costs-month`
 
-Show cost breakdown by model (requires Admin API key).
+Show cost breakdown by billing line item (requires Admin API key).
 
 ### `/codex-hud:summary`
 

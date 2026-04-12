@@ -25,7 +25,7 @@
 - **실시간 Statusline**: [claude-hud](https://github.com/jarrodwatts/claude-hud)와 통합하여 Claude Code statusline 아래에 Codex Usage/Weekly 레이트 리밋 표시
 - **슬래시 명령어**: 사용량, 비용, 요약 전용 명령어
 - **이중 데이터 소스**: 로컬 Codex CLI 세션 로그 (API 키 불필요) + OpenAI Usage API (선택, 달러 비용 조회)
-- **런타임 의존성 제로**: Node.js 내장 모듈만 사용
+- **npm 런타임 의존성 제로**: Node.js 내장 모듈만 사용 (statusline wrapper는 Bash와 Perl 필요)
 - **우아한 대체 동작**: API 키 없이도 로컬 로그만으로 동작
 
 ## Statusline 통합
@@ -126,7 +126,7 @@ Rate limit: 6.0% (5h) / 14.0% (7d) | Plan: team
 
 ### `/codex-hud:costs-today` / `costs-week` / `costs-month`
 
-모델별 비용을 표시합니다 (Admin API 키 필요).
+청구 항목별 비용을 표시합니다 (Admin API 키 필요).
 
 ### `/codex-hud:summary`
 

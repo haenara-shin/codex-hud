@@ -65,17 +65,17 @@ export function formatUsageTable(
 }
 
 export function formatCostsTable(
-  data: Array<{ date?: string; model: string; cost: number }>,
+  data: Array<{ date?: string; lineItem: string; cost: number }>,
 ): string {
   if (data.length === 0) return "No cost data found.";
 
   const hasDate = data.some((d) => d.date !== undefined);
   const header = hasDate
-    ? `| Date | Model | Cost |`
-    : `| Model | Cost |`;
+    ? `| Date | Line Item | Cost |`
+    : `| Line Item | Cost |`;
   const separator = hasDate
-    ? `|------|-------|------|`
-    : `|-------|------|`;
+    ? `|------|-----------|------|`
+    : `|-----------|------|`;
 
   const lines = [header, separator];
   let total = 0;
@@ -83,9 +83,9 @@ export function formatCostsTable(
   for (const row of data) {
     const cost = formatUsd(row.cost);
     if (hasDate) {
-      lines.push(`| ${row.date} | ${row.model} | ${cost} |`);
+      lines.push(`| ${row.date} | ${row.lineItem} | ${cost} |`);
     } else {
-      lines.push(`| ${row.model} | ${cost} |`);
+      lines.push(`| ${row.lineItem} | ${cost} |`);
     }
     total += row.cost;
   }
