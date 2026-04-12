@@ -122,9 +122,11 @@ Show token usage broken down by metrics.
 Rate limit: 6.0% (5h) / 14.0% (7d) | Plan: team
 ```
 
-### `/codex-hud:costs-today` / `costs-week` / `costs-month`
+### `/codex-hud:costs-today` / `costs-week` / `costs-month` *(beta)*
 
 Show cost breakdown by billing line item (requires Admin API key).
+
+> **Beta**: This feature has not been tested with a live Admin API key. If you're on a pay-per-token plan and encounter incorrect data, please [open an issue](https://github.com/haenara-shin/codex-hud/issues).
 
 ### `/codex-hud:summary`
 

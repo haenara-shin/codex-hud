@@ -124,9 +124,11 @@ OpenAI Admin API 키를 설정하고 연결을 확인합니다.
 Rate limit: 6.0% (5h) / 14.0% (7d) | Plan: team
 ```
 
-### `/codex-hud:costs-today` / `costs-week` / `costs-month`
+### `/codex-hud:costs-today` / `costs-week` / `costs-month` *(beta)*
 
 청구 항목별 비용을 표시합니다 (Admin API 키 필요).
+
+> **Beta**: 이 기능은 실제 Admin API 키로 테스트되지 않았습니다. 종량제(pay-per-token) 플랜에서 데이터가 올바르지 않으면 [이슈를 열어주세요](https://github.com/haenara-shin/codex-hud/issues).
 
 ### `/codex-hud:summary`
 
