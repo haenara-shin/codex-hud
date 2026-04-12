@@ -139,7 +139,7 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 | Source | Data | Auth Required |
 |--------|------|---------------|
 | Local Codex CLI logs (`~/.codex/sessions/`) | Token usage, rate limits, session count | None |
-| OpenAI Usage API (`/v1/organization/costs`) | Dollar costs by model | Admin API key |
+| OpenAI Usage API (`/v1/organization/costs`) | Dollar costs by billing line item | Admin API key |
 | OpenAI Usage API (`/v1/organization/usage/completions`) | Org-wide token usage by model | Admin API key |
 
 ## Requirements
