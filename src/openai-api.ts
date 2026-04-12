@@ -78,7 +78,7 @@ export async function fetchCosts(
   const params: Record<string, string | string[]> = {
     start_time: String(startTime),
     bucket_width: bucketWidth,
-    "group_by[]": ["model"],
+    "group_by[]": ["line_item"],
   };
   if (endTime) {
     params["end_time"] = String(endTime);

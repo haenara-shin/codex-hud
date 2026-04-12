@@ -4,7 +4,7 @@
 
 NODE="$(command -v node)"
 # Resolve real path even through symlinks
-SCRIPT_REAL="$(readlink -f "$0" 2>/dev/null || python3 -c "import os; print(os.path.realpath('$0'))")"
+SCRIPT_REAL="$(readlink -f "$0" 2>/dev/null || perl -MCwd -e 'print Cwd::realpath($ARGV[0])' "$0")"
 CODEX_HUD_DIR="$(cd "$(dirname "$SCRIPT_REAL")/.." && pwd)"
 
 # Find latest claude-hud plugin directory

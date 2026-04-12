@@ -74,7 +74,7 @@ async function handleSetup(args: string[]): Promise<void> {
           );
         }, 0);
         if (totalCost > 0) {
-          console.log(`Last 24h cost: ${formatUsd(totalCost / 100)}`);
+          console.log(`Last 24h cost: ${formatUsd(totalCost)}`);
         }
       }
     } else {
@@ -124,7 +124,7 @@ async function handleSetup(args: string[]): Promise<void> {
         );
       }, 0);
       if (totalCost > 0) {
-        console.log(`Last 24h cost: ${formatUsd(totalCost / 100)}`);
+        console.log(`Last 24h cost: ${formatUsd(totalCost)}`);
       }
     }
   } else {
@@ -258,7 +258,7 @@ async function handleCosts(args: string[]): Promise<void> {
       rows.push({
         date: bucketDate,
         model: r.line_item ?? "unknown",
-        cost: (r.amount?.value ?? 0) / 100, // cents to dollars
+        cost: r.amount?.value ?? 0,
       });
     }
   }
@@ -295,7 +295,7 @@ async function handleSummary(): Promise<void> {
         return (
           sum +
           bucket.results.reduce(
-            (s, r) => s + ((r.amount?.value ?? 0) / 100),
+            (s, r) => s + (r.amount?.value ?? 0),
             0,
           )
         );
@@ -329,7 +329,7 @@ async function handleLabel(): Promise<void> {
         return (
           sum +
           bucket.results.reduce(
-            (s, r) => s + ((r.amount?.value ?? 0) / 100),
+            (s, r) => s + (r.amount?.value ?? 0),
             0,
           )
         );

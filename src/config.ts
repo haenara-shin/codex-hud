@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, chmodSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import type { PluginConfig } from "./types.js";
@@ -29,9 +29,13 @@ export function loadConfig(): PluginConfig {
 export function saveConfig(config: PluginConfig): void {
   const dir = getConfigDir();
   if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
   }
-  writeFileSync(getConfigPath(), JSON.stringify(config, null, 2) + "\n");
+  const configPath = getConfigPath();
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n", {
+    mode: 0o600,
+  });
+  chmodSync(configPath, 0o600);
 }
 
 export function resolveAdminKey(): string | null {
