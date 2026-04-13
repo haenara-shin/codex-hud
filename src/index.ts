@@ -3,6 +3,7 @@ import { testConnection, fetchCosts, fetchUsage } from "./openai-api.js";
 import { aggregateLocalUsage } from "./local-logs.js";
 import { renderStatusLines } from "./statusline.js";
 import { installStatusline, uninstallStatusline } from "./install-statusline.js";
+import { showConfig, setConfigOption, resetConfig } from "./configure.js";
 import {
   formatTokenUsage,
   formatRateLimits,
@@ -392,6 +393,32 @@ async function main(): Promise<void> {
     case "uninstall-statusline": {
       const result = uninstallStatusline();
       console.log(result.message);
+      break;
+    }
+    case "configure": {
+      const sub = rest[0];
+      if (sub === "--get" || sub === undefined) {
+        console.log(showConfig(rest.includes("--json")));
+      } else if (sub === "--reset") {
+        const result = resetConfig();
+        console.log(result.message);
+      } else if (sub === "--set" && rest[1]) {
+        const [key, value] = rest[1].split("=");
+        if (!key || value === undefined) {
+          console.error("Usage: configure --set key=value");
+          process.exit(1);
+        }
+        const result = setConfigOption(key, value);
+        if (rest.includes("--json")) {
+          console.log(JSON.stringify(result));
+        } else {
+          console.log(result.message);
+        }
+        if (!result.ok) process.exit(1);
+      } else {
+        console.error("Usage: configure [--get] | --set key=value | --reset");
+        process.exit(1);
+      }
       break;
     }
     default:

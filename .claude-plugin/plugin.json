@@ -1,12 +1,13 @@
 {
   "name": "codex-hud",
   "description": "Display OpenAI Codex API usage and costs inside Claude Code",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "Haenara Shin"
   },
   "commands": [
     "./commands/setup.md",
+    "./commands/configure.md",
     "./commands/usage-today.md",
     "./commands/usage-week.md",
     "./commands/usage-month.md",

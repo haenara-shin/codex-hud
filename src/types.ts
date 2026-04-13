@@ -1,8 +1,31 @@
 // ── Config ──
 
+export interface DisplayConfig {
+  layout?: "compact" | "expanded";
+  showPlan?: boolean;
+  showFooter?: boolean;
+  showUsage?: boolean;
+  showWeekly?: boolean;
+  barWidth?: number;
+  fallbackToWeek?: boolean;
+  language?: "en" | "ko";
+}
+
 export interface PluginConfig {
   adminKey?: string;
+  display?: DisplayConfig;
 }
+
+export const DEFAULT_DISPLAY: Required<DisplayConfig> = {
+  layout: "expanded",
+  showPlan: true,
+  showFooter: true,
+  showUsage: true,
+  showWeekly: true,
+  barWidth: 10,
+  fallbackToWeek: true,
+  language: "en",
+};
 
 // ── OpenAI Usage API responses ──
 

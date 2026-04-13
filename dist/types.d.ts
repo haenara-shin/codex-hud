@@ -1,6 +1,18 @@
+export interface DisplayConfig {
+    layout?: "compact" | "expanded";
+    showPlan?: boolean;
+    showFooter?: boolean;
+    showUsage?: boolean;
+    showWeekly?: boolean;
+    barWidth?: number;
+    fallbackToWeek?: boolean;
+    language?: "en" | "ko";
+}
 export interface PluginConfig {
     adminKey?: string;
+    display?: DisplayConfig;
 }
+export declare const DEFAULT_DISPLAY: Required<DisplayConfig>;
 export interface CostsBucket {
     object: string;
     amount: {

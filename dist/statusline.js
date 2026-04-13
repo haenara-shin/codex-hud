@@ -1,11 +1,32 @@
 import { aggregateLocalUsage } from "./local-logs.js";
+import { loadConfig } from "./config.js";
+import { DEFAULT_DISPLAY } from "./types.js";
 // ANSI escape codes matching claude-hud's color scheme
 const RESET = "\x1b[0m";
 const DIM = "\x1b[2m";
 const RED = "\x1b[31m";
 const BRIGHT_BLUE = "\x1b[94m";
 const BRIGHT_MAGENTA = "\x1b[95m";
-// ── Color helpers (matching claude-hud) ──
+// ── i18n ──
+const I18N = {
+    en: {
+        usage: "Usage",
+        weekly: "Weekly",
+        sessions: "session",
+        sessionsPlural: "sessions",
+        noData: "No Codex sessions found",
+        resetsIn: "resets in",
+    },
+    ko: {
+        usage: "Usage",
+        weekly: "Weekly",
+        sessions: "세션",
+        sessionsPlural: "세션",
+        noData: "Codex 세션 없음",
+        resetsIn: "리셋까지",
+    },
+};
+// ── Color helpers ──
 function getQuotaColor(percent) {
     if (percent >= 90)
         return RED;
@@ -13,7 +34,7 @@ function getQuotaColor(percent) {
         return BRIGHT_MAGENTA;
     return BRIGHT_BLUE;
 }
-function quotaBar(percent, width = 10) {
+function quotaBar(percent, width) {
     const safePercent = Math.min(100, Math.max(0, percent));
     const filled = Math.round((safePercent / 100) * width);
     const empty = width - filled;
@@ -39,53 +60,89 @@ function formatResetTime(resetsAt) {
     }
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
-// ── Line renderers (claude-hud style) ──
-function renderUsageLine(rl) {
-    const percent = rl.primary.used_percent;
-    const color = getQuotaColor(percent);
-    const bar = quotaBar(percent);
-    const resetStr = formatResetTime(rl.primary.resets_at);
-    const resetPart = resetStr ? ` ${DIM}(resets in ${resetStr})${RESET}` : "";
-    return `${DIM}Usage${RESET}   ${bar} ${color}${percent.toFixed(0)}%${RESET}${resetPart}`;
+// ── Expanded layout (multi-line with bars) ──
+function renderExpanded(rateLimits, sessionCount, cfg) {
+    const lines = [];
+    const t = I18N[cfg.language];
+    const plan = rateLimits?.plan_type ?? "";
+    // Header
+    const planLabel = cfg.showPlan && plan ? ` ${plan}` : "";
+    lines.push(`${DIM}── Codex${planLabel} ──${RESET}`);
+    if (!rateLimits && sessionCount === 0) {
+        lines.push(`${DIM}${t.noData}${RESET}`);
+        return lines;
+    }
+    if (rateLimits) {
+        if (cfg.showUsage) {
+            const p = rateLimits.primary.used_percent;
+            const color = getQuotaColor(p);
+            const bar = quotaBar(p, cfg.barWidth);
+            const reset = formatResetTime(rateLimits.primary.resets_at);
+            const resetPart = reset ? ` ${DIM}(${t.resetsIn} ${reset})${RESET}` : "";
+            lines.push(`${DIM}${t.usage}${RESET}   ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+        }
+        if (cfg.showWeekly) {
+            const p = rateLimits.secondary.used_percent;
+            const color = getQuotaColor(p);
+            const bar = quotaBar(p, cfg.barWidth);
+            const reset = formatResetTime(rateLimits.secondary.resets_at);
+            const resetPart = reset ? ` ${DIM}(${t.resetsIn} ${reset})${RESET}` : "";
+            lines.push(`${DIM}${t.weekly}${RESET}  ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+        }
+    }
+    if (cfg.showFooter && sessionCount > 0) {
+        const label = sessionCount === 1 ? t.sessions : t.sessionsPlural;
+        const planPart = cfg.showPlan && plan ? ` | ${plan}` : "";
+        lines.push(`${DIM}${sessionCount} ${label}${planPart}${RESET}`);
+    }
+    return lines;
 }
-function renderWeeklyLine(rl) {
-    const percent = rl.secondary.used_percent;
-    const color = getQuotaColor(percent);
-    const bar = quotaBar(percent);
-    const resetStr = formatResetTime(rl.secondary.resets_at);
-    const resetPart = resetStr ? ` ${DIM}(resets in ${resetStr})${RESET}` : "";
-    return `${DIM}Weekly${RESET}  ${bar} ${color}${percent.toFixed(0)}%${RESET}${resetPart}`;
-}
-function renderSessionInfo(sessionCount, plan) {
-    return `${DIM}${sessionCount} session${sessionCount !== 1 ? "s" : ""} | ${plan}${RESET}`;
+// ── Compact layout (single line with separators) ──
+function renderCompact(rateLimits, sessionCount, cfg) {
+    const t = I18N[cfg.language];
+    const plan = rateLimits?.plan_type ?? "";
+    const parts = [];
+    // Prefix
+    const planLabel = cfg.showPlan && plan ? ` ${plan}` : "";
+    parts.push(`${DIM}Codex${planLabel}${RESET}`);
+    if (!rateLimits && sessionCount === 0) {
+        parts.push(`${DIM}${t.noData}${RESET}`);
+        return [parts.join(` ${DIM}│${RESET} `)];
+    }
+    if (rateLimits) {
+        if (cfg.showUsage) {
+            const p = rateLimits.primary.used_percent;
+            const color = getQuotaColor(p);
+            const reset = formatResetTime(rateLimits.primary.resets_at);
+            const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
+            parts.push(`${DIM}${t.usage}${RESET} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+        }
+        if (cfg.showWeekly) {
+            const p = rateLimits.secondary.used_percent;
+            const color = getQuotaColor(p);
+            const reset = formatResetTime(rateLimits.secondary.resets_at);
+            const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
+            parts.push(`${DIM}${t.weekly}${RESET} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+        }
+    }
+    if (cfg.showFooter && sessionCount > 0) {
+        parts.push(`${DIM}${sessionCount}s${RESET}`);
+    }
+    return [parts.join(` ${DIM}│${RESET} `)];
 }
 // ── Main export ──
 export function renderStatusLines(range = "today") {
+    const stored = loadConfig().display ?? {};
+    const cfg = { ...DEFAULT_DISPLAY, ...stored };
     let local = aggregateLocalUsage(range);
-    // If today has no data, fallback to week to get latest rate limits
-    if (range === "today" && local.sessionCount === 0) {
+    if (cfg.fallbackToWeek && range === "today" && local.sessionCount === 0) {
         const fallback = aggregateLocalUsage("week");
         if (fallback.sessionCount > 0) {
             local = fallback;
         }
     }
-    const lines = [];
-    // Header with plan type
-    const plan = local.latestRateLimits?.plan_type ?? "";
-    const planLabel = plan ? ` ${plan}` : "";
-    lines.push(`${DIM}── Codex${planLabel} ──${RESET}`);
-    if (local.sessionCount === 0 && !local.latestRateLimits) {
-        lines.push(`${DIM}No Codex sessions found${RESET}`);
-        return lines;
+    if (cfg.layout === "compact") {
+        return renderCompact(local.latestRateLimits, local.sessionCount, cfg);
     }
-    // Usage (5h window) and Weekly (7d window)
-    if (local.latestRateLimits) {
-        lines.push(renderUsageLine(local.latestRateLimits));
-        lines.push(renderWeeklyLine(local.latestRateLimits));
-    }
-    // Session count
-    if (local.sessionCount > 0) {
-        lines.push(renderSessionInfo(local.sessionCount, plan));
-    }
-    return lines;
+    return renderExpanded(local.latestRateLimits, local.sessionCount, cfg);
 }

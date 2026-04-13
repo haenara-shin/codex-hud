@@ -1,1 +1,2 @@
-export declare function renderStatusLines(range?: "today" | "week" | "month"): string[];
+import type { DateRange } from "./types.js";
+export declare function renderStatusLines(range?: DateRange): string[];
