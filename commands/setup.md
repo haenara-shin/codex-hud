@@ -1,11 +1,23 @@
 ---
-description: Configure OpenAI Admin API key for Codex usage tracking
+description: Install codex-hud statusline and optionally configure OpenAI Admin API key
 allowed-tools: Bash(node:*), AskUserQuestion, Read
 ---
 
 # Setup Codex HUD
 
-First, check the current configuration status:
+## Step 1: Install the statusline integration
+
+Install the symlink and update `~/.claude/settings.json` so the Codex usage bars appear below claude-hud's statusline:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" install-statusline --json
+```
+
+Report the outcome to the user. If it succeeded, remind them to run `/reload-plugins` or restart Claude Code to see the Codex statusline.
+
+If `statusline` was already pointing to a custom command (not claude-hud and not codex-hud), warn them that it was replaced — the wrapper chains claude-hud automatically, so claude-hud users are covered.
+
+## Step 2: Check API key status (optional — only for dollar cost tracking)
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" setup --json
@@ -13,27 +25,22 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" setup --json
 
 Based on the result:
 
-## If `status` is `"connected"`
-Tell the user their Admin API key is already configured and working. Show the last 24h cost if available.
+### If `status` is `"connected"`
+The Admin API key is already configured and working. Show the last 24h cost if available.
 
-## If `status` is `"no_key"`
-Ask the user for their OpenAI Admin API key:
+### If `status` is `"no_key"`
+Explain that the API key is **optional** — only needed for dollar cost tracking (`/codex-hud:costs-*`). Rate limits, token usage, and statusline all work without it.
 
-> You need an **OpenAI Admin API key** (starts with `sk-admin-...`) to track Codex usage costs.
->
-> Get one at: https://platform.openai.com/settings/organization/admin-keys
->
-> Please enter your Admin API key:
+Then ask the user whether they want to configure an Admin key now:
 
-Use `AskUserQuestion` to get the key from the user.
+- **Skip** — leave it unconfigured (recommended for Teams/Enterprise subscribers whose costs are included in their plan)
+- **Add key now** — ask for the `sk-admin-...` key via `AskUserQuestion`, then:
 
-Then save and verify the key:
+  ```bash
+  node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" setup --key "USER_PROVIDED_KEY" --json
+  ```
 
-```bash
-node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" setup --key "USER_PROVIDED_KEY" --json
-```
+### If `status` is `"error"`
+Show the error and suggest the user check their key.
 
-If the connection succeeds, tell the user it's configured. If it fails, show the error and ask them to check the key.
-
-## If `status` is `"error"`
-Show the error message and suggest the user check their key or run setup again.
+Get an Admin key at: https://platform.openai.com/settings/organization/admin-keys

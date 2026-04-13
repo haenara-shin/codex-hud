@@ -2,6 +2,7 @@ import { resolveAdminKey, saveConfig, loadConfig } from "./config.js";
 import { testConnection, fetchCosts, fetchUsage } from "./openai-api.js";
 import { aggregateLocalUsage } from "./local-logs.js";
 import { renderStatusLines } from "./statusline.js";
+import { installStatusline, uninstallStatusline } from "./install-statusline.js";
 import {
   formatTokenUsage,
   formatRateLimits,
@@ -376,6 +377,21 @@ async function main(): Promise<void> {
       for (const line of lines) {
         console.log(line);
       }
+      break;
+    }
+    case "install-statusline": {
+      const result = installStatusline();
+      if (rest.includes("--json")) {
+        console.log(JSON.stringify(result));
+      } else {
+        console.log(result.message);
+        if (!result.ok) process.exit(1);
+      }
+      break;
+    }
+    case "uninstall-statusline": {
+      const result = uninstallStatusline();
+      console.log(result.message);
       break;
     }
     default:

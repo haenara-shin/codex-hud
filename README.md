@@ -75,24 +75,19 @@ Then in Claude Code:
 /plugin install codex-hud@codex-hud
 ```
 
-### Statusline setup (optional)
+### Statusline setup
 
-To show Codex rate limits in the statusline alongside claude-hud, create a symlink and update your `~/.claude/settings.json`:
+After installing the plugin, run:
 
-```bash
-ln -sf /path/to/codex-hud/scripts/statusline-wrapper.sh ~/.claude/codex-hud-statusline.sh
+```
+/codex-hud:setup
 ```
 
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "/Users/YOU/.claude/codex-hud-statusline.sh"
-  }
-}
-```
+This automatically creates the symlink and updates your `~/.claude/settings.json` so the Codex rate limits appear below claude-hud's statusline. The wrapper runs claude-hud first, then appends codex-hud's output below it.
 
-The wrapper runs claude-hud first, then appends codex-hud's output below it.
+Restart Claude Code or run `/reload-plugins` to see the Codex statusline.
+
+To remove it later: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusline`
 
 ## Setup
 

@@ -75,26 +75,19 @@ Claude Code에서:
 /plugin install codex-hud@codex-hud
 ```
 
-### Statusline 설정 (선택)
+### Statusline 설정
 
-claude-hud와 함께 Codex 레이트 리밋을 statusline에 표시하려면:
+플러그인 설치 후 아래 명령어를 실행하면 자동으로 설정됩니다:
 
-```bash
-ln -sf /path/to/codex-hud/scripts/statusline-wrapper.sh ~/.claude/codex-hud-statusline.sh
+```
+/codex-hud:setup
 ```
 
-`~/.claude/settings.json`에서:
+symlink 생성과 `~/.claude/settings.json` 업데이트가 자동으로 이뤄지며, claude-hud 출력 아래에 Codex 레이트 리밋이 표시됩니다.
 
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "/Users/YOU/.claude/codex-hud-statusline.sh"
-  }
-}
-```
+Claude Code를 재시작하거나 `/reload-plugins`를 실행하면 반영됩니다.
 
-wrapper는 claude-hud를 먼저 실행한 후 codex-hud 출력을 아래에 추가합니다.
+제거: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusline`
 
 ## 설정
 
