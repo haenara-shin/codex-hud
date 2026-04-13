@@ -97,6 +97,46 @@ function renderExpanded(rateLimits, sessionCount, cfg) {
     }
     return lines;
 }
+// ── Horizontal layout (Usage + Weekly side-by-side) ──
+function renderHorizontal(rateLimits, sessionCount, cfg) {
+    const lines = [];
+    const t = I18N[cfg.language];
+    const plan = rateLimits?.plan_type ?? "";
+    // Header
+    const planLabel = cfg.showPlan && plan ? ` ${plan}` : "";
+    lines.push(`${DIM}── Codex${planLabel} ──${RESET}`);
+    if (!rateLimits && sessionCount === 0) {
+        lines.push(`${DIM}${t.noData}${RESET}`);
+        return lines;
+    }
+    // Usage and Weekly on a single line, separated by │
+    const metricParts = [];
+    if (rateLimits && cfg.showUsage) {
+        const p = rateLimits.primary.used_percent;
+        const color = getQuotaColor(p);
+        const bar = quotaBar(p, cfg.barWidth);
+        const reset = formatResetTime(rateLimits.primary.resets_at);
+        const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
+        metricParts.push(`${DIM}${t.usage}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+    }
+    if (rateLimits && cfg.showWeekly) {
+        const p = rateLimits.secondary.used_percent;
+        const color = getQuotaColor(p);
+        const bar = quotaBar(p, cfg.barWidth);
+        const reset = formatResetTime(rateLimits.secondary.resets_at);
+        const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
+        metricParts.push(`${DIM}${t.weekly}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+    }
+    if (metricParts.length > 0) {
+        lines.push(metricParts.join(` ${DIM}│${RESET}  `));
+    }
+    if (cfg.showFooter && sessionCount > 0) {
+        const label = sessionCount === 1 ? t.sessions : t.sessionsPlural;
+        const planPart = cfg.showPlan && plan ? ` | ${plan}` : "";
+        lines.push(`${DIM}${sessionCount} ${label}${planPart}${RESET}`);
+    }
+    return lines;
+}
 // ── Compact layout (single line with separators) ──
 function renderCompact(rateLimits, sessionCount, cfg) {
     const t = I18N[cfg.language];
@@ -143,6 +183,9 @@ export function renderStatusLines(range = "today") {
     }
     if (cfg.layout === "compact") {
         return renderCompact(local.latestRateLimits, local.sessionCount, cfg);
+    }
+    if (cfg.layout === "horizontal") {
+        return renderHorizontal(local.latestRateLimits, local.sessionCount, cfg);
     }
     return renderExpanded(local.latestRateLimits, local.sessionCount, cfg);
 }

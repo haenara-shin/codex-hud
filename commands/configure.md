@@ -32,8 +32,9 @@ Advanced fields like `colors` are not yet exposed via this flow.
 - question: "Choose your statusline layout:"
 - multiSelect: false
 - options:
-  - "Expanded (Recommended)" — Multi-line with progress bars (current codex-hud default)
-  - "Compact" — Single line with `│` separators
+  - "Expanded (Recommended)" — Each metric on its own line with progress bars
+  - "Horizontal" — Usage and Weekly side-by-side on one line (saves vertical space)
+  - "Compact" — Everything on a single line with `│` separators
 
 ### Q2: Preset
 - header: "Preset"
@@ -75,6 +76,7 @@ Build questions based on current values. Show current value in the question text
 - options:
   - "Keep current"
   - "Switch to Expanded" (hide if already expanded)
+  - "Switch to Horizontal" (hide if already horizontal)
   - "Switch to Compact" (hide if already compact)
 
 ### Q2: Turn Off
@@ -125,7 +127,7 @@ If nothing is OFF, say "Nothing to enable — everything is already on" and skip
 
 | UI option | CLI key | Values |
 |-----------|---------|--------|
-| Layout | `layout` | `expanded` / `compact` |
+| Layout | `layout` | `expanded` / `horizontal` / `compact` |
 | Plan badge | `showPlan` | `true` / `false` |
 | Session footer | `showFooter` | `true` / `false` |
 | Usage bar (5h) | `showUsage` | `true` / `false` |
@@ -158,6 +160,13 @@ Expanded:
 ── Codex team ──
 Usage   ██░░░░░░░░ 15% (resets in 4h 37m)
 Weekly  █░░░░░░░░░ 3%  (resets in 6d 9h)
+15 sessions | team
+```
+
+Horizontal:
+```
+── Codex team ──
+Usage ██░░░░░░░░ 15% (4h 37m)  │  Weekly █░░░░░░░░░ 3% (6d 9h)
 15 sessions | team
 ```
 
