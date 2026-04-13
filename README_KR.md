@@ -46,6 +46,22 @@ Weekly  ░░░░░░░░░░ 0% (resets in 7d)
 
 ## 설치
 
+### 방법 A: buildwithclaude 마켓플레이스
+
+```
+/plugin marketplace add davepoon/buildwithclaude
+/plugin install codex-hud@buildwithclaude
+```
+
+### 방법 B: 이 repo에서 직접
+
+```
+/plugin marketplace add haenara-shin/codex-hud
+/plugin install codex-hud@codex-hud
+```
+
+### 방법 C: 소스에서 빌드
+
 ```bash
 git clone https://github.com/haenara-shin/codex-hud.git
 cd codex-hud
@@ -55,7 +71,7 @@ npm install && npm run build
 Claude Code에서:
 
 ```
-/plugin marketplace add haenara-shin/codex-hud
+/plugin marketplace add /path/to/codex-hud
 /plugin install codex-hud@codex-hud
 ```
 

@@ -46,6 +46,22 @@ Weekly  ░░░░░░░░░░ 0% (resets in 7d)
 
 ## Installation
 
+### Option A: via buildwithclaude marketplace
+
+```
+/plugin marketplace add davepoon/buildwithclaude
+/plugin install codex-hud@buildwithclaude
+```
+
+### Option B: via this repo directly
+
+```
+/plugin marketplace add haenara-shin/codex-hud
+/plugin install codex-hud@codex-hud
+```
+
+### Option C: from source
+
 ```bash
 git clone https://github.com/haenara-shin/codex-hud.git
 cd codex-hud
@@ -55,7 +71,7 @@ npm install && npm run build
 Then in Claude Code:
 
 ```
-/plugin marketplace add haenara-shin/codex-hud
+/plugin marketplace add /path/to/codex-hud
 /plugin install codex-hud@codex-hud
 ```
 
