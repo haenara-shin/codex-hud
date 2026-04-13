@@ -77,17 +77,24 @@ Claude Code에서:
 
 ### Statusline 설정
 
-플러그인 설치 후 아래 명령어를 실행하면 자동으로 설정됩니다:
+플러그인 설치 후 아래 명령어를 실행합니다 (멱등적 -- 여러 번 실행해도 안전):
 
 ```
 /codex-hud:setup
 ```
 
-symlink 생성과 `~/.claude/settings.json` 업데이트가 자동으로 이뤄지며, claude-hud 출력 아래에 Codex 레이트 리밋이 표시됩니다.
+- `~/.claude/codex-hud-statusline.sh` symlink 생성
+- `~/.claude/settings.json`의 `statusLine.command` 설정
 
 Claude Code를 재시작하거나 `/reload-plugins`를 실행하면 반영됩니다.
 
-제거: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusline`
+달러 비용 추적 (선택, OpenAI Admin API 키 필요):
+
+```
+/codex-hud:setup-key
+```
+
+statusline 제거: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusline`
 
 ## 설정
 

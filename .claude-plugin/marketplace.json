@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Display OpenAI Codex API usage and costs inside Claude Code",
-    "version": "0.3.1"
+    "version": "0.3.2"
   },
   "plugins": [
     {

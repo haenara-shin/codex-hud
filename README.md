@@ -83,11 +83,19 @@ After installing the plugin, run:
 /codex-hud:setup
 ```
 
-This automatically creates the symlink and updates your `~/.claude/settings.json` so the Codex rate limits appear below claude-hud's statusline. The wrapper runs claude-hud first, then appends codex-hud's output below it.
+This command is idempotent and only touches the statusline integration:
+- Creates the symlink at `~/.claude/codex-hud-statusline.sh`
+- Updates `~/.claude/settings.json` so the Codex rate limits appear below claude-hud's statusline
 
 Restart Claude Code or run `/reload-plugins` to see the Codex statusline.
 
-To remove it later: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusline`
+To enable dollar cost tracking (optional, requires OpenAI Admin API key):
+
+```
+/codex-hud:setup-key
+```
+
+To remove the statusline integration: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusline`
 
 ## Setup
 
