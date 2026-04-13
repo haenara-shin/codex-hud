@@ -155,6 +155,18 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 | OpenAI Usage API (`/v1/organization/costs`) | 청구 항목별 달러 비용 | Admin API key |
 | OpenAI Usage API (`/v1/organization/usage/completions`) | 조직 전체 토큰 사용량 | Admin API key |
 
+## 업데이트
+
+새 버전으로 업데이트하려면 **반드시 두 명령을 모두** 실행하세요 (플러그인 관리 UI의 "Update now" 버튼만으로는 마켓플레이스 캐시가 갱신되지 않습니다):
+
+```
+/plugin marketplace update codex-hud
+/plugin update codex-hud@codex-hud
+/reload-plugins
+```
+
+다른 마켓플레이스(예: `buildwithclaude`)로 설치한 경우 `codex-hud` 대신 해당 마켓플레이스 이름을 사용하세요.
+
 ## 요구사항
 
 - Node.js >= 18.0.0

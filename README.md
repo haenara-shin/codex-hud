@@ -155,6 +155,18 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 | OpenAI Usage API (`/v1/organization/costs`) | Dollar costs by billing line item | Admin API key |
 | OpenAI Usage API (`/v1/organization/usage/completions`) | Org-wide token usage by model | Admin API key |
 
+## Updating
+
+To update to a newer version, **run both commands** (the plugin manager UI's "Update now" button alone does not refresh the marketplace cache):
+
+```
+/plugin marketplace update codex-hud
+/plugin update codex-hud@codex-hud
+/reload-plugins
+```
+
+Substitute `codex-hud` with your marketplace alias (e.g. `buildwithclaude`) if you installed via that marketplace.
+
 ## Requirements
 
 - Node.js >= 18.0.0
