@@ -4,16 +4,15 @@
     "name": "Haenara Shin"
   },
   "metadata": {
-    "description": "Display OpenAI Codex API usage and costs inside Claude Code",
-    "version": "0.4.0"
+    "description": "Display OpenAI Codex API usage and costs inside Claude Code"
   },
   "plugins": [
     {
       "name": "codex-hud",
       "source": "./",
-      "description": "Track Codex token usage, costs, and rate limits from local session logs and the OpenAI Usage API. Commands: /codex-hud:setup, /codex-hud:usage, /codex-hud:costs, /codex-hud:summary",
+      "description": "Real-time Codex rate limit monitoring in Claude Code statusline. Parses local session logs for Usage/Weekly bars with reset timers. 10 commands: setup, setup-key, configure, usage-today/week/month, costs-today/week/month, summary. 3 layouts (expanded/horizontal/compact).",
       "category": "monitoring",
-      "tags": ["codex", "openai", "usage", "costs", "monitoring"]
+      "tags": ["codex", "openai", "usage", "rate-limits", "costs", "statusline", "monitoring", "hud"]
     }
   ]
 }
