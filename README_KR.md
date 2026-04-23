@@ -9,6 +9,8 @@
 
 [Claude Code](https://claude.ai/code)에서 OpenAI Codex 사용량과 레이트 리밋을 바로 확인할 수 있는 플러그인입니다.
 
+> [Anthropic community 플러그인 마켓플레이스](https://github.com/anthropics/claude-plugins-community)와 [buildwithclaude](https://github.com/davepoon/buildwithclaude)에 등재되어 있습니다.
+
 ## 왜 만들었나?
 
 [codex-plugin-cc](https://github.com/openai/codex-plugin-cc)로 Claude Code에서 Codex에 작업을 위임할 수 있지만, Codex의 레이트 리밋을 확인하려면 터미널을 벗어나야 합니다. **codex-hud**가 그 빈 틈을 채웁니다.
@@ -46,21 +48,30 @@ Weekly  ░░░░░░░░░░ 0% (resets in 7d)
 
 ## 설치
 
-### 방법 A: buildwithclaude 마켓플레이스
+### 방법 A: Anthropic community 마켓플레이스 *(권장)*
+
+Anthropic이 직접 관리하는 디렉터리로, internal review pipeline에서 nightly로 동기화됩니다.
+
+```
+/plugin marketplace add anthropics/claude-plugins-community
+/plugin install codex-hud@claude-community
+```
+
+### 방법 B: buildwithclaude 마켓플레이스
 
 ```
 /plugin marketplace add davepoon/buildwithclaude
 /plugin install codex-hud@buildwithclaude
 ```
 
-### 방법 B: 이 repo에서 직접
+### 방법 C: 이 repo에서 직접
 
 ```
 /plugin marketplace add haenara-shin/codex-hud
 /plugin install codex-hud@codex-hud
 ```
 
-### 방법 C: 소스에서 빌드
+### 방법 D: 소스에서 빌드
 
 ```bash
 git clone https://github.com/haenara-shin/codex-hud.git
@@ -172,7 +183,7 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 /reload-plugins
 ```
 
-다른 마켓플레이스(예: `buildwithclaude`)로 설치한 경우 `codex-hud` 대신 해당 마켓플레이스 이름을 사용하세요.
+설치 경로에 따라 alias를 바꿔서 사용하세요 — Anthropic community 마켓플레이스는 `claude-community`, buildwithclaude는 `buildwithclaude`, 이 repo 직접 설치는 `codex-hud`.
 
 ## 요구사항
 

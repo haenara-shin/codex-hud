@@ -9,6 +9,8 @@
 
 A [Claude Code](https://claude.ai/code) plugin that displays OpenAI Codex usage and rate limits — right inside your Claude Code session.
 
+> Listed in [Anthropic's community plugin marketplace](https://github.com/anthropics/claude-plugins-community) and [buildwithclaude](https://github.com/davepoon/buildwithclaude).
+
 ## Why?
 
 If you use [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) to delegate tasks to Codex from Claude Code, you have no way to check your Codex rate limits without leaving your terminal. **codex-hud** fills that gap.
@@ -46,21 +48,30 @@ Weekly  ░░░░░░░░░░ 0% (resets in 7d)
 
 ## Installation
 
-### Option A: via buildwithclaude marketplace
+### Option A: via Anthropic's community marketplace *(recommended)*
+
+Anthropic-maintained directory, nightly-synced from the internal review pipeline.
+
+```
+/plugin marketplace add anthropics/claude-plugins-community
+/plugin install codex-hud@claude-community
+```
+
+### Option B: via buildwithclaude marketplace
 
 ```
 /plugin marketplace add davepoon/buildwithclaude
 /plugin install codex-hud@buildwithclaude
 ```
 
-### Option B: via this repo directly
+### Option C: via this repo directly
 
 ```
 /plugin marketplace add haenara-shin/codex-hud
 /plugin install codex-hud@codex-hud
 ```
 
-### Option C: from source
+### Option D: from source
 
 ```bash
 git clone https://github.com/haenara-shin/codex-hud.git
@@ -173,7 +184,7 @@ To update to a newer version, **run both commands** (the plugin manager UI's "Up
 /reload-plugins
 ```
 
-Substitute `codex-hud` with your marketplace alias (e.g. `buildwithclaude`) if you installed via that marketplace.
+Substitute `codex-hud` with your marketplace alias — `claude-community` for Anthropic's community marketplace, `buildwithclaude` for buildwithclaude, or `codex-hud` for the direct repo install.
 
 ## Requirements
 
