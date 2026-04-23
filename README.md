@@ -197,13 +197,3 @@ Substitute `codex-hud` with your marketplace alias — `claude-community` for An
 ## License
 
 MIT
-
-## Star History
-
-<a href="https://star-history.com/#haenara-shin/codex-hud&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date&theme=dark" width="600" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date" width="600" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date" width="600" />
- </picture>
-</a>

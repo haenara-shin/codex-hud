@@ -196,13 +196,3 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 ## 라이선스
 
 MIT
-
-## Star History
-
-<a href="https://star-history.com/#haenara-shin/codex-hud&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date&theme=dark" width="600" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date" width="600" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=haenara-shin/codex-hud&type=Date" width="600" />
- </picture>
-</a>
