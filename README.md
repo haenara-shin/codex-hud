@@ -194,6 +194,10 @@ Substitute `codex-hud` with your marketplace alias — `claude-community` for An
 - [claude-hud](https://github.com/jarrodwatts/claude-hud) (optional, for statusline integration)
 - OpenAI Admin API key (optional, for cost data)
 
+## Acknowledgments
+
+codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud) — which solved the same usage-visibility problem for Claude Code itself. codex-hud extends that idea to OpenAI Codex and integrates with claude-hud via the included wrapper script when both are installed.
+
 ## License
 
 MIT

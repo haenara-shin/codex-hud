@@ -193,6 +193,10 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 - [claude-hud](https://github.com/jarrodwatts/claude-hud) (선택, statusline 통합용)
 - OpenAI Admin API key (선택, 비용 데이터용)
 
+## 감사의 말
+
+codex-hud는 Claude Code 자체의 사용량 가시성 문제를 statusline으로 해결한 [claude-hud](https://github.com/jarrodwatts/claude-hud)에서 영감을 받아 만들어졌습니다. 같은 아이디어를 OpenAI Codex로 확장한 것이며, 두 플러그인이 함께 설치된 경우 wrapper 스크립트로 자연스럽게 통합됩니다.
+
 ## 라이선스
 
 MIT
