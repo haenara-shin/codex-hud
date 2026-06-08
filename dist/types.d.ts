@@ -72,16 +72,17 @@ export interface TokenUsage {
 }
 export interface RateLimitWindow {
     used_percent: number;
-    window_minutes: number;
-    resets_at: number;
+    window_minutes: number | null;
+    resets_at: number | null;
 }
 export interface RateLimits {
-    limit_id: string;
+    limit_id: string | null;
     limit_name: string | null;
-    primary: RateLimitWindow;
-    secondary: RateLimitWindow;
+    primary: RateLimitWindow | null;
+    secondary: RateLimitWindow | null;
     credits: unknown;
-    plan_type: string;
+    plan_type: string | null;
+    rate_limit_reached_type?: string | null;
 }
 export interface TokenCountEvent {
     timestamp: string;

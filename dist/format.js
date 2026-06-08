@@ -27,11 +27,25 @@ export function formatTokenUsage(usage) {
     return lines.join("\n");
 }
 export function formatRateLimits(rl) {
-    const primary = `${rl.primary.used_percent.toFixed(1)}%`;
-    const windowH = Math.round(rl.primary.window_minutes / 60);
-    const secondary = `${rl.secondary.used_percent.toFixed(1)}%`;
-    const windowD = Math.round(rl.secondary.window_minutes / 60 / 24);
-    return `Rate limit: ${primary} (${windowH}h) / ${secondary} (${windowD}d) | Plan: ${rl.plan_type}`;
+    const parts = [];
+    if (rl.primary) {
+        const pct = `${rl.primary.used_percent.toFixed(1)}%`;
+        const win = rl.primary.window_minutes != null
+            ? ` (${Math.round(rl.primary.window_minutes / 60)}h)`
+            : "";
+        parts.push(`${pct}${win}`);
+    }
+    if (rl.secondary) {
+        const pct = `${rl.secondary.used_percent.toFixed(1)}%`;
+        const win = rl.secondary.window_minutes != null
+            ? ` (${Math.round(rl.secondary.window_minutes / 60 / 24)}d)`
+            : "";
+        parts.push(`${pct}${win}`);
+    }
+    const planPart = rl.plan_type ? ` | Plan: ${rl.plan_type}` : "";
+    if (parts.length === 0)
+        return `Rate limit: n/a${planPart}`;
+    return `Rate limit: ${parts.join(" / ")}${planPart}`;
 }
 export function formatUsageTable(data) {
     if (data.length === 0)
@@ -94,10 +108,13 @@ export function formatSummaryLine(opts) {
     }
     parts.push(`${formatNumber(opts.totalTokens)} tokens (${formatNumber(opts.cachedTokens)} cached)`);
     parts.push(`${opts.sessionCount} session${opts.sessionCount !== 1 ? "s" : ""}`);
-    if (opts.rateLimits) {
+    if (opts.rateLimits?.primary && opts.rateLimits.secondary) {
         const p = opts.rateLimits.primary.used_percent.toFixed(0);
         const s = opts.rateLimits.secondary.used_percent.toFixed(0);
         parts.push(`Rate: ${p}%/${s}%`);
+    }
+    else if (opts.rateLimits?.primary) {
+        parts.push(`Rate: ${opts.rateLimits.primary.used_percent.toFixed(0)}%`);
     }
     return `Codex today: ${parts.join(" | ")}`;
 }
@@ -112,7 +129,7 @@ export function formatStatusLabel(opts) {
     if (opts.sessionCount > 0) {
         parts.push(`${opts.sessionCount}s`);
     }
-    if (opts.rateLimits) {
+    if (opts.rateLimits?.primary) {
         const p = opts.rateLimits.primary.used_percent.toFixed(0);
         parts.push(`${p}%`);
     }

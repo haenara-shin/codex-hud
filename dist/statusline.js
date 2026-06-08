@@ -42,6 +42,8 @@ function quotaBar(percent, width) {
     return `${color}${"█".repeat(filled)}${DIM}${"░".repeat(empty)}${RESET}`;
 }
 function formatResetTime(resetsAt) {
+    if (resetsAt == null)
+        return "";
     const now = Date.now() / 1000;
     const diffSec = resetsAt - now;
     if (diffSec <= 0)
@@ -73,7 +75,7 @@ function renderExpanded(rateLimits, sessionCount, cfg) {
         return lines;
     }
     if (rateLimits) {
-        if (cfg.showUsage) {
+        if (cfg.showUsage && rateLimits.primary) {
             const p = rateLimits.primary.used_percent;
             const color = getQuotaColor(p);
             const bar = quotaBar(p, cfg.barWidth);
@@ -81,7 +83,7 @@ function renderExpanded(rateLimits, sessionCount, cfg) {
             const resetPart = reset ? ` ${DIM}(${t.resetsIn} ${reset})${RESET}` : "";
             lines.push(`${DIM}${t.usage}${RESET}   ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
         }
-        if (cfg.showWeekly) {
+        if (cfg.showWeekly && rateLimits.secondary) {
             const p = rateLimits.secondary.used_percent;
             const color = getQuotaColor(p);
             const bar = quotaBar(p, cfg.barWidth);
@@ -111,7 +113,7 @@ function renderHorizontal(rateLimits, sessionCount, cfg) {
     }
     // Usage and Weekly on a single line, separated by │
     const metricParts = [];
-    if (rateLimits && cfg.showUsage) {
+    if (rateLimits && cfg.showUsage && rateLimits.primary) {
         const p = rateLimits.primary.used_percent;
         const color = getQuotaColor(p);
         const bar = quotaBar(p, cfg.barWidth);
@@ -119,7 +121,7 @@ function renderHorizontal(rateLimits, sessionCount, cfg) {
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
         metricParts.push(`${DIM}${t.usage}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
     }
-    if (rateLimits && cfg.showWeekly) {
+    if (rateLimits && cfg.showWeekly && rateLimits.secondary) {
         const p = rateLimits.secondary.used_percent;
         const color = getQuotaColor(p);
         const bar = quotaBar(p, cfg.barWidth);
@@ -150,14 +152,14 @@ function renderCompact(rateLimits, sessionCount, cfg) {
         return [parts.join(` ${DIM}│${RESET} `)];
     }
     if (rateLimits) {
-        if (cfg.showUsage) {
+        if (cfg.showUsage && rateLimits.primary) {
             const p = rateLimits.primary.used_percent;
             const color = getQuotaColor(p);
             const reset = formatResetTime(rateLimits.primary.resets_at);
             const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
             parts.push(`${DIM}${t.usage}${RESET} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
         }
-        if (cfg.showWeekly) {
+        if (cfg.showWeekly && rateLimits.secondary) {
             const p = rateLimits.secondary.used_percent;
             const color = getQuotaColor(p);
             const reset = formatResetTime(rateLimits.secondary.resets_at);

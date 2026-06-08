@@ -1,6 +1,9 @@
 import { readFileSync, writeFileSync, existsSync, symlinkSync, unlinkSync, lstatSync, mkdirSync, } from "node:fs";
 import { join, dirname } from "node:path";
 import { homedir } from "node:os";
+// Re-run the statusline command on a fixed timer so Codex "resets in Xm"
+// countdowns stay current while the main session is idle (Claude Code v2.1.97+).
+const REFRESH_INTERVAL_SECONDS = 60;
 function getClaudeDir() {
     return process.env["CLAUDE_CONFIG_DIR"] || join(homedir(), ".claude");
 }
@@ -71,13 +74,16 @@ function updateSettings() {
     const currentStatusLine = settings["statusLine"];
     if (currentStatusLine?.command) {
         previous = currentStatusLine.command;
-        if (previous === linkPath) {
+        // Already fully configured (command + refreshInterval) -> nothing to do.
+        if (previous === linkPath &&
+            currentStatusLine.refreshInterval === REFRESH_INTERVAL_SECONDS) {
             return { updated: false, previous, error: null };
         }
     }
     settings["statusLine"] = {
         type: "command",
         command: linkPath,
+        refreshInterval: REFRESH_INTERVAL_SECONDS,
     };
     try {
         writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");

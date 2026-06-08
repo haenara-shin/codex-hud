@@ -69,6 +69,62 @@ function buildQuery(params: Record<string, string | string[]>): string {
   return parts.join("&");
 }
 
+// Number of whole days covered by [startTime, endTime|now], at least 1.
+function dayCount(startTime: number, endTime?: number): number {
+  const end = endTime ?? Math.floor(Date.now() / 1000);
+  return Math.max(1, Math.ceil((end - startTime) / 86400));
+}
+
+interface PaginatedResponse {
+  data: unknown[];
+  has_more: boolean;
+  next_page: string | null;
+}
+
+// The Costs/Usage APIs return at most `limit` buckets per page (1d default is
+// only 7) and hide the rest behind has_more/next_page. Without this, a 30-day
+// range silently reports ~7 days. Loop through pages and merge the buckets.
+async function apiFetchAllPages<T extends PaginatedResponse>(
+  basePath: string,
+  params: Record<string, string | string[]>,
+  adminKey: string,
+): Promise<ApiResult<T>> {
+  let merged: T | null = null;
+  let page: string | null = null;
+
+  // Hard cap so a misbehaving cursor can't loop forever.
+  for (let i = 0; i < 50; i++) {
+    const pageParams = { ...params };
+    if (page) pageParams["page"] = page;
+
+    const res = await apiFetch<T>(
+      `${basePath}?${buildQuery(pageParams)}`,
+      adminKey,
+    );
+    if (!res.ok) {
+      // Return whatever we have so far; only surface the error on page 1.
+      if (merged) break;
+      return res;
+    }
+
+    if (!merged) {
+      merged = res.data;
+    } else {
+      merged.data.push(...res.data.data);
+      merged.has_more = res.data.has_more;
+      merged.next_page = res.data.next_page;
+    }
+
+    if (!res.data.has_more || !res.data.next_page) break;
+    page = res.data.next_page;
+  }
+
+  if (!merged) {
+    return { ok: false, error: "No data returned from OpenAI API." };
+  }
+  return { ok: true, data: merged };
+}
+
 export async function fetchCosts(
   adminKey: string,
   startTime: number,
@@ -79,12 +135,15 @@ export async function fetchCosts(
     start_time: String(startTime),
     bucket_width: bucketWidth,
     "group_by[]": ["line_item"],
+    // Costs API caps daily buckets at 180; request the whole range up front.
+    limit: String(Math.min(dayCount(startTime, endTime), 180)),
   };
   if (endTime) {
     params["end_time"] = String(endTime);
   }
-  return apiFetch<CostsResponse>(
-    `/v1/organization/costs?${buildQuery(params)}`,
+  return apiFetchAllPages<CostsResponse>(
+    "/v1/organization/costs",
+    params,
     adminKey,
   );
 }
@@ -99,12 +158,15 @@ export async function fetchUsage(
     start_time: String(startTime),
     bucket_width: bucketWidth,
     "group_by[]": ["model"],
+    // Usage API caps 1d buckets at 31; request the whole range up front.
+    limit: String(Math.min(dayCount(startTime, endTime), 31)),
   };
   if (endTime) {
     params["end_time"] = String(endTime);
   }
-  return apiFetch<UsageResponse>(
-    `/v1/organization/usage/completions?${buildQuery(params)}`,
+  return apiFetchAllPages<UsageResponse>(
+    "/v1/organization/usage/completions",
+    params,
     adminKey,
   );
 }

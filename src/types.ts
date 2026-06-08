@@ -31,6 +31,9 @@ export const DEFAULT_DISPLAY: Required<DisplayConfig> = {
 
 export interface CostsBucket {
   object: string;
+  // amount.value is the final billed amount in `currency` (USD), computed
+  // server-side. Do NOT multiply by tokens or apply a price table — any model
+  // repricing is already reflected here.
   amount: { value: number; currency: string };
   line_item: string | null;
   project_id: string | null;
@@ -93,17 +96,22 @@ export interface TokenUsage {
 
 export interface RateLimitWindow {
   used_percent: number;
-  window_minutes: number;
-  resets_at: number;
+  // Upstream Codex types these as Option<…>; None serializes as explicit null.
+  window_minutes: number | null;
+  resets_at: number | null;
 }
 
 export interface RateLimits {
-  limit_id: string;
+  limit_id: string | null;
   limit_name: string | null;
-  primary: RateLimitWindow;
-  secondary: RateLimitWindow;
+  // primary/secondary are Option<RateLimitSnapshot> upstream: on free / no-limit
+  // plans or partial snapshots they arrive as JSON null. Guard before deref.
+  primary: RateLimitWindow | null;
+  secondary: RateLimitWindow | null;
   credits: unknown;
-  plan_type: string;
+  plan_type: string | null;
+  // Added in Codex CLI 0.125.0; non-null only when a limit is actively reached.
+  rate_limit_reached_type?: string | null;
 }
 
 export interface TokenCountEvent {

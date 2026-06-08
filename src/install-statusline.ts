@@ -18,6 +18,10 @@ interface InstallResult {
   message: string;
 }
 
+// Re-run the statusline command on a fixed timer so Codex "resets in Xm"
+// countdowns stay current while the main session is idle (Claude Code v2.1.97+).
+const REFRESH_INTERVAL_SECONDS = 60;
+
 function getClaudeDir(): string {
   return process.env["CLAUDE_CONFIG_DIR"] || join(homedir(), ".claude");
 }
@@ -93,12 +97,16 @@ function updateSettings(): { updated: boolean; previous: string | null; error: s
   }
 
   const currentStatusLine = settings["statusLine"] as
-    | { type?: string; command?: string }
+    | { type?: string; command?: string; refreshInterval?: number }
     | undefined;
 
   if (currentStatusLine?.command) {
     previous = currentStatusLine.command;
-    if (previous === linkPath) {
+    // Already fully configured (command + refreshInterval) -> nothing to do.
+    if (
+      previous === linkPath &&
+      currentStatusLine.refreshInterval === REFRESH_INTERVAL_SECONDS
+    ) {
       return { updated: false, previous, error: null };
     }
   }
@@ -106,6 +114,7 @@ function updateSettings(): { updated: boolean; previous: string | null; error: s
   settings["statusLine"] = {
     type: "command",
     command: linkPath,
+    refreshInterval: REFRESH_INTERVAL_SECONDS,
   };
 
   try {

@@ -24,9 +24,10 @@
 
 ## 주요 기능
 
-- **실시간 Statusline**: [claude-hud](https://github.com/jarrodwatts/claude-hud)와 통합하여 Claude Code statusline 아래에 Codex Usage/Weekly 레이트 리밋 표시
+- **실시간 Statusline**: [claude-hud](https://github.com/jarrodwatts/claude-hud)와 통합하여 Claude Code statusline 아래에 Codex Usage/Weekly 레이트 리밋 표시. 세션이 유휴 상태일 때도 리셋 카운트다운이 갱신되도록 60초 주기 새로고침
 - **슬래시 명령어**: 사용량, 비용, 요약 전용 명령어
 - **이중 데이터 소스**: 로컬 Codex CLI 세션 로그 (API 키 불필요) + OpenAI Usage API (선택, 달러 비용 조회)
+- **플랜 무관 동작**: 모든 Codex 플랜(free, Plus, Pro, Team, Enterprise)에서 정상 렌더 — 보고되지 않은 레이트 리밋 윈도우는 건너뛰며 statusline을 깨뜨리지 않음
 - **npm 런타임 의존성 제로**: Node.js 내장 모듈만 사용 (statusline wrapper는 Bash와 Perl 필요)
 - **우아한 대체 동작**: API 키 없이도 로컬 로그만으로 동작
 
@@ -95,7 +96,7 @@ Claude Code에서:
 ```
 
 - `~/.claude/codex-hud-statusline.sh` symlink 생성
-- `~/.claude/settings.json`의 `statusLine.command` 설정
+- `~/.claude/settings.json`의 `statusLine.command` 설정 (유휴 중에도 리셋 카운트다운이 갱신되도록 `statusLine.refreshInterval`을 60초로 설정)
 
 Claude Code를 재시작하거나 `/reload-plugins`를 실행하면 반영됩니다.
 
@@ -196,6 +197,19 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 ## 감사의 말
 
 codex-hud는 Claude Code 자체의 사용량 가시성 문제를 statusline으로 해결한 [claude-hud](https://github.com/jarrodwatts/claude-hud)에서 영감을 받아 만들어졌습니다. 같은 아이디어를 OpenAI Codex로 확장한 것이며, 두 플러그인이 함께 설치된 경우 wrapper 스크립트로 자연스럽게 통합됩니다.
+
+## 변경 이력
+
+### v0.5.0
+
+- **수정:** 레이트 리밋 윈도우가 없는 플랜(예: free / 무제한 플랜은 `primary` 또는 `secondary`가 `null`)에서 statusline이 더 이상 크래시하지 않습니다. 없는 윈도우는 건너뛰고 나머지는 정상 렌더됩니다.
+- **수정:** `costs-month` / `usage-month`가 전체 기간을 보고합니다. OpenAI Costs/Usage API는 페이지당 일별 버킷 수가 제한(기본 7개)되어 있어, 30일 조회 시 이전에는 에러 없이 약 7일치만 반환됐습니다. 이제 요청 크기를 맞추고 `has_more`/`next_page` 페이지네이션을 따라갑니다.
+- **추가:** statusline 등록 시 `refreshInterval: 60`을 설정하여 유휴 중에도 리셋 카운트다운이 갱신됩니다.
+- **정리:** `plugin.json`의 명시적 `commands[]` 배열 제거(명령어 자동 탐색), 두 매니페스트에 `$schema` 추가, 현행 Claude Code 2.1.x / Codex CLI 0.125+ 계약 대조 검증.
+
+### v0.4.0
+
+- 가로 레이아웃(Usage + Weekly 나란히) 추가; 총 3가지 레이아웃(expanded / horizontal / compact).
 
 ## 라이선스
 
