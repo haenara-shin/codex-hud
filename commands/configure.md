@@ -11,7 +11,7 @@ allowed-tools: Bash(node:*), AskUserQuestion, Read
 node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" configure --get --json
 ```
 
-Parse the JSON to determine current values. If the output has `display` set or differs from defaults, use **Flow B (existing user)**. Otherwise use **Flow A (new user)**.
+Parse the JSON to determine current values. If `_configured` is `true`, use **Flow B (existing user)**. Otherwise use **Flow A (new user)**.
 
 Defaults:
 - `layout: "expanded"`, `showPlan: true`, `showFooter: true`, `showUsage: true`, `showWeekly: true`, `barWidth: 10`, `fallbackToWeek: true`, `language: "en"`
@@ -19,7 +19,7 @@ Defaults:
 ## Always On (not configurable)
 - Codex header badge (`── Codex ──`)
 - The data source (local Codex session logs at `~/.codex/sessions/`)
-- Rate limit window windows themselves (5h Usage, 7d Weekly)
+- Rate limit windows themselves (5h Usage, 7d Weekly)
 
 Advanced fields like `colors` are not yet exposed via this flow.
 
@@ -114,12 +114,14 @@ If nothing is OFF, say "Nothing to enable — everything is already on" and skip
 
 ## Preset Definitions
 
-| Preset | layout | showPlan | showFooter | showUsage | showWeekly |
-|--------|--------|----------|------------|-----------|------------|
-| Full | expanded | true | true | true | true |
-| Bars only | expanded | false | false | true | true |
-| Usage only | expanded | false | false | true | false |
-| Minimal | compact | true | false | false | false |
+Layout always comes from Q1; presets only set the visibility flags below.
+
+| Preset | showPlan | showFooter | showUsage | showWeekly |
+|--------|----------|------------|-----------|------------|
+| Full | true | true | true | true |
+| Bars only | false | false | true | true |
+| Usage only | false | false | true | false |
+| Minimal | true | false | false | false |
 
 ---
 
@@ -202,4 +204,4 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" configure --reset
 
 ## After Writing
 
-Say: "Configuration saved. Run `/reload-plugins` or restart Claude Code to apply."
+Say: "Configuration saved. The statusline picks it up at its next refresh (within ~60 seconds, or after the next assistant message) — no restart needed."

@@ -12,7 +12,7 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" install-statusline --json
 ```
 
 Read the JSON output. Report concisely to the user:
-- If `ok: true`, confirm that the symlink was created (or already in place) and that `~/.claude/settings.json` is configured.
+- If `ok: true`, confirm that the launcher script was created (or already in place) and that `~/.claude/settings.json` is configured.
 - If `settingsUpdated: true`, remind them to run `/reload-plugins` or restart Claude Code.
 - If `ok: false`, print the `message` field so the user can fix it.
 

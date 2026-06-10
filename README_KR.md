@@ -106,7 +106,7 @@ Claude Code를 재시작하거나 `/reload-plugins`를 실행하면 반영됩니
 /codex-hud:setup-key
 ```
 
-statusline 제거: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusline`
+statusline 제거: `/codex-hud:uninstall` 실행 (저장된 이전 statusline이 있으면 복원됩니다)
 
 ## 설정
 
@@ -119,8 +119,8 @@ statusline 제거: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusl
 달러 비용을 확인하려면 **OpenAI Admin API key**가 필요합니다:
 
 1. [platform.openai.com/settings/organization/admin-keys](https://platform.openai.com/settings/organization/admin-keys) 접속
-2. Admin key 생성 (`sk-admin-...`으로 시작)
-3. Claude Code에서 `/codex-hud:setup` 실행 후 키 입력
+2. Admin key 생성 (`sk-admin-...`으로 시작) 후 클립보드에 복사
+3. Claude Code에서 `/codex-hud:setup-key` 실행 — 키는 클립보드에서 직접 읽으며, 채팅에 입력하지 않습니다
 
 또는 `OPENAI_ADMIN_KEY` 환경변수를 설정하세요.
 
@@ -130,7 +130,19 @@ statusline 제거: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusl
 
 ### `/codex-hud:setup`
 
-OpenAI Admin API 키를 설정하고 연결을 확인합니다.
+statusline 통합을 설치합니다 (멱등적 — 여러 번 실행해도 안전).
+
+### `/codex-hud:setup-key`
+
+OpenAI Admin API 키를 설정하고 검증합니다 (클립보드 기반, 달러 비용 조회에만 필요).
+
+### `/codex-hud:configure`
+
+표시 옵션 가이드 플로우: 레이아웃, 프리셋, 언어, 바 너비.
+
+### `/codex-hud:uninstall`
+
+statusline 통합을 제거하고 이전 statusline을 복원합니다.
 
 ### `/codex-hud:usage-today` / `usage-week` / `usage-month`
 
@@ -199,6 +211,18 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 codex-hud는 Claude Code 자체의 사용량 가시성 문제를 statusline으로 해결한 [claude-hud](https://github.com/jarrodwatts/claude-hud)에서 영감을 받아 만들어졌습니다. 같은 아이디어를 OpenAI Codex로 확장한 것이며, 두 플러그인이 함께 설치된 경우 wrapper 스크립트로 자연스럽게 통합됩니다.
 
 ## 변경 이력
+
+### v0.5.1
+
+전체 다차원 코드 리뷰(33개 발견, 적대적 검증)로 만들어진 품질 릴리스.
+
+- **수정 (설치):** statusline 진입점이 이제 현재 플러그인 설치 위치를 런타임에 해석하는 launcher 스크립트입니다. 이전에는 symlink가 버전 번호가 붙은 플러그인 캐시를 가리켜서, 첫 `/plugin update` 시 statusline 전체가 조용히 사라졌습니다.
+- **보안 (키 처리):** `/codex-hud:setup-key`가 이제 Admin 키를 클립보드에서 읽어 stdin으로 전달합니다(`setup --key-stdin`). 키가 더 이상 채팅 기록이나 프로세스 인자에 남지 않습니다.
+- **수정 (정확도):** 최신 rate limit 스냅샷을 이벤트 timestamp 기준으로 선택합니다 (이전: 파일 경로 정렬 — 낡은 스냅샷에 바가 몇 시간 동결될 수 있었음). 자정을 넘긴 세션도 "오늘" 범위에서 반영됩니다.
+- **성능:** 큰 rollout 파일(>256KB)은 매 렌더마다 전체 파싱하지 않고 tail-read합니다 — 20MB 활성 세션 기준 렌더당 ~200ms → ~1ms.
+- **견고성:** 설치 시 기존 `statusLine`의 다른 필드를 보존하고 이전 statusline을 저장합니다. 새 명령 `/codex-hud:uninstall`이 이를 복원합니다. settings.json 쓰기는 atomic. wrapper는 PATH에 node가 없어도 메시지를 표시하며, claude-hud를 마켓플레이스 alias와 무관하게 플러그인 메타데이터로 찾습니다.
+- **수정 (비용):** 전진하지 않는 API 커서 가드, API가 결과를 잘랐을 때 보이는 경고 추가.
+- 문서: 잘못된 `/codex-hud:setup` → `/codex-hud:setup-key` 안내 전부 수정, CLI help 완성, configure 플로우 모순 해소.
 
 ### v0.5.0
 

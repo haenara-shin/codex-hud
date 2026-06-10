@@ -14,6 +14,9 @@ export interface DisplayConfig {
 export interface PluginConfig {
   adminKey?: string;
   display?: DisplayConfig;
+  /** The user's statusLine settings block as it was before install,
+   *  so uninstall can restore it. */
+  previousStatusLine?: Record<string, unknown>;
 }
 
 export const DEFAULT_DISPLAY: Required<DisplayConfig> = {
@@ -76,16 +79,6 @@ export interface UsageResponse {
 
 // ── Local Codex session logs ──
 
-export interface SessionMeta {
-  id: string;
-  timestamp: string;
-  cwd: string;
-  originator: string;
-  cli_version: string;
-  source: string;
-  model_provider: string;
-}
-
 export interface TokenUsage {
   input_tokens: number;
   cached_input_tokens: number;
@@ -114,31 +107,11 @@ export interface RateLimits {
   rate_limit_reached_type?: string | null;
 }
 
-export interface TokenCountEvent {
-  timestamp: string;
-  type: "event_msg";
-  payload: {
-    type: "token_count";
-    info: {
-      total_token_usage: TokenUsage;
-      last_token_usage: TokenUsage;
-      model_context_window: number;
-    } | null;
-    rate_limits: RateLimits;
-  };
-}
-
-export interface SessionLogEntry {
-  timestamp: string;
-  type: string;
-  payload: Record<string, unknown>;
-}
-
 export interface ParsedSession {
-  meta: SessionMeta | null;
   totalUsage: TokenUsage | null;
   rateLimits: RateLimits | null;
-  modelContextWindow: number | null;
+  /** Epoch ms of the event that carried rateLimits (file mtime fallback). */
+  rlTimestamp: number | null;
   date: string; // YYYY-MM-DD
   filePath: string;
 }

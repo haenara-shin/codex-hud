@@ -1,6 +1,6 @@
 interface InstallResult {
     ok: boolean;
-    symlinkCreated: boolean;
+    launcherCreated: boolean;
     settingsUpdated: boolean;
     previousCommand: string | null;
     message: string;

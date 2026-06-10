@@ -1,4 +1,12 @@
-import { readdirSync, readFileSync, existsSync } from "node:fs";
+import {
+  readdirSync,
+  readFileSync,
+  existsSync,
+  openSync,
+  readSync,
+  closeSync,
+  statSync,
+} from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import type {
@@ -7,17 +15,41 @@ import type {
   TokenUsage,
   RateLimits,
   AggregatedUsage,
-  SessionMeta,
 } from "./types.js";
+
+// Files at or below this size are read whole; larger ones are tail-read.
+// total_token_usage is cumulative, so only the LAST token_count per file
+// matters — full-parsing a multi-MB active session on every statusline
+// render (60s timer + every assistant message) is wasted work.
+const FULL_READ_LIMIT = 256 * 1024;
+// Tail windows widened in order until a token_count with usage is found.
+const TAIL_WINDOWS = [64 * 1024, 1024 * 1024, 8 * 1024 * 1024];
 
 function getSessionsDir(): string {
   return join(homedir(), ".codex", "sessions");
 }
 
-function getDateDirs(range: DateRange): string[] {
-  const now = new Date();
-  const dirs: string[] = [];
+function dayDir(daysAgo: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  const yyyy = d.getFullYear().toString();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return join(getSessionsDir(), yyyy, mm, dd);
+}
 
+function listLogs(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  try {
+    return readdirSync(dir)
+      .filter((entry) => entry.endsWith(".jsonl"))
+      .map((entry) => join(dir, entry));
+  } catch {
+    return []; // skip unreadable dirs
+  }
+}
+
+export function findSessionLogs(range: DateRange): string[] {
   let daysBack: number;
   switch (range) {
     case "today":
@@ -31,37 +63,81 @@ function getDateDirs(range: DateRange): string[] {
       break;
   }
 
+  const files: string[] = [];
   for (let i = 0; i <= daysBack; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const yyyy = d.getFullYear().toString();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    dirs.push(join(getSessionsDir(), yyyy, mm, dd));
+    files.push(...listLogs(dayDir(i)));
   }
-
-  return dirs;
+  return files;
 }
 
-export function findSessionLogs(range: DateRange): string[] {
-  const dirs = getDateDirs(range);
-  const files: string[] = [];
+interface ScanResult {
+  lastUsage: TokenUsage | null;
+  lastRateLimits: RateLimits | null;
+  rlTimestamp: number | null; // epoch ms of the entry carrying lastRateLimits
+}
 
-  for (const dir of dirs) {
-    if (!existsSync(dir)) continue;
+function scanLines(content: string): ScanResult {
+  let lastUsage: TokenUsage | null = null;
+  let lastRateLimits: RateLimits | null = null;
+  let rlTimestamp: number | null = null;
+
+  for (const line of content.split("\n")) {
+    if (!line.trim()) continue;
     try {
-      const entries = readdirSync(dir);
-      for (const entry of entries) {
-        if (entry.endsWith(".jsonl")) {
-          files.push(join(dir, entry));
+      const entry = JSON.parse(line);
+      if (entry.type === "event_msg" && entry.payload?.type === "token_count") {
+        if (entry.payload.info?.total_token_usage) {
+          lastUsage = entry.payload.info.total_token_usage as TokenUsage;
+        }
+        if (entry.payload.rate_limits) {
+          lastRateLimits = entry.payload.rate_limits as RateLimits;
+          const ts =
+            typeof entry.timestamp === "string"
+              ? Date.parse(entry.timestamp)
+              : NaN;
+          rlTimestamp = Number.isNaN(ts) ? null : ts;
         }
       }
     } catch {
-      // skip unreadable dirs
+      // skip malformed lines (including a truncated line at a tail boundary
+      // or the in-progress last line of an actively written file)
     }
   }
 
-  return files;
+  return { lastUsage, lastRateLimits, rlTimestamp };
+}
+
+function readTailContent(
+  filePath: string,
+  size: number,
+  bytes: number,
+): string {
+  const fd = openSync(filePath, "r");
+  try {
+    const start = size - bytes; // caller guarantees bytes < size
+    const buf = Buffer.alloc(bytes);
+    const read = readSync(fd, buf, 0, bytes, start);
+    const text = buf.toString("utf-8", 0, read);
+    // Drop the (likely partial) first line; this also neutralizes a
+    // multi-byte UTF-8 sequence split at the window boundary.
+    const nl = text.indexOf("\n");
+    return nl >= 0 ? text.slice(nl + 1) : "";
+  } finally {
+    closeSync(fd);
+  }
+}
+
+function scanFile(filePath: string, size: number): ScanResult {
+  if (size <= FULL_READ_LIMIT) {
+    return scanLines(readFileSync(filePath, "utf-8"));
+  }
+  for (const window of TAIL_WINDOWS) {
+    if (window >= size) break; // window covers the whole file: full-read below
+    const result = scanLines(readTailContent(filePath, size, window));
+    if (result.lastUsage) return result;
+  }
+  // No token_count found in any tail window — degrade to the full read.
+  return scanLines(readFileSync(filePath, "utf-8"));
 }
 
 export function parseSessionLog(filePath: string): ParsedSession {
@@ -70,53 +146,21 @@ export function parseSessionLog(filePath: string): ParsedSession {
     ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`
     : "unknown";
 
-  let meta: SessionMeta | null = null;
-  let lastUsage: TokenUsage | null = null;
-  let lastRateLimits: RateLimits | null = null;
-  let modelContextWindow: number | null = null;
+  let totalUsage: TokenUsage | null = null;
+  let rateLimits: RateLimits | null = null;
+  let rlTimestamp: number | null = null;
 
   try {
-    const content = readFileSync(filePath, "utf-8");
-    const lines = content.split("\n").filter((l) => l.trim());
-
-    for (const line of lines) {
-      try {
-        const entry = JSON.parse(line);
-
-        if (entry.type === "session_meta" && entry.payload) {
-          meta = entry.payload as SessionMeta;
-        }
-
-        if (
-          entry.type === "event_msg" &&
-          entry.payload?.type === "token_count"
-        ) {
-          if (entry.payload.info?.total_token_usage) {
-            lastUsage = entry.payload.info.total_token_usage as TokenUsage;
-            if (entry.payload.info.model_context_window) {
-              modelContextWindow = entry.payload.info.model_context_window as number;
-            }
-          }
-          if (entry.payload.rate_limits) {
-            lastRateLimits = entry.payload.rate_limits as RateLimits;
-          }
-        }
-      } catch {
-        // skip malformed lines
-      }
-    }
+    const { size, mtimeMs } = statSync(filePath);
+    const scan = scanFile(filePath, size);
+    totalUsage = scan.lastUsage;
+    rateLimits = scan.lastRateLimits;
+    rlTimestamp = scan.rlTimestamp ?? (rateLimits ? mtimeMs : null);
   } catch {
     // skip unreadable files
   }
 
-  return {
-    meta,
-    totalUsage: lastUsage,
-    rateLimits: lastRateLimits,
-    modelContextWindow,
-    date,
-    filePath,
-  };
+  return { totalUsage, rateLimits, rlTimestamp, date, filePath };
 }
 
 function emptyUsage(): TokenUsage {
@@ -134,6 +178,21 @@ export function aggregateLocalUsage(range: DateRange): AggregatedUsage {
   const sessions: ParsedSession[] = [];
   const totals = emptyUsage();
   let latestRateLimits: RateLimits | null = null;
+  let latestRlTimestamp = -Infinity;
+
+  // Rate limits are a point-in-time snapshot, so pick the one whose EVENT
+  // timestamp is newest. File-path order is wrong here: paths sort by
+  // session START time, so a long-running session's fresh snapshot would
+  // lose to a stale one from a later-started session.
+  const considerRateLimits = (session: ParsedSession): void => {
+    if (
+      session.rateLimits &&
+      (session.rlTimestamp ?? 0) > latestRlTimestamp
+    ) {
+      latestRateLimits = session.rateLimits;
+      latestRlTimestamp = session.rlTimestamp ?? 0;
+    }
+  };
 
   for (const file of files) {
     const session = parseSessionLog(file);
@@ -148,10 +207,15 @@ export function aggregateLocalUsage(range: DateRange): AggregatedUsage {
       totals.total_tokens += session.totalUsage.total_tokens;
     }
 
-    // Files are sorted by path (includes timestamp), so the last
-    // non-null rateLimits we see is from the most recent session.
-    if (session.rateLimits) {
-      latestRateLimits = session.rateLimits;
+    considerRateLimits(session);
+  }
+
+  // A session that spans midnight keeps writing into yesterday's file, so
+  // for the "today" range also scan the previous day — rate limits only;
+  // usage totals still attribute to the session's start date.
+  if (range === "today") {
+    for (const file of listLogs(dayDir(1))) {
+      considerRateLimits(parseSessionLog(file));
     }
   }
 

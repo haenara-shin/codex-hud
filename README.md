@@ -107,7 +107,7 @@ To enable dollar cost tracking (optional, requires OpenAI Admin API key):
 /codex-hud:setup-key
 ```
 
-To remove the statusline integration: `node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" uninstall-statusline`
+To remove the statusline integration, run `/codex-hud:uninstall` (restores your previous statusline if one was saved).
 
 ## Setup
 
@@ -120,8 +120,8 @@ If you use the [Codex CLI](https://github.com/openai/codex) or [codex-plugin-cc]
 To see dollar costs, you need an **OpenAI Admin API key**:
 
 1. Go to [platform.openai.com/settings/organization/admin-keys](https://platform.openai.com/settings/organization/admin-keys)
-2. Create an Admin key (starts with `sk-admin-...`)
-3. Run `/codex-hud:setup` in Claude Code and enter the key
+2. Create an Admin key (starts with `sk-admin-...`) and copy it to your clipboard
+3. Run `/codex-hud:setup-key` in Claude Code — the key is read from the clipboard, never typed into the chat
 
 Or set the `OPENAI_ADMIN_KEY` environment variable.
 
@@ -131,7 +131,19 @@ Or set the `OPENAI_ADMIN_KEY` environment variable.
 
 ### `/codex-hud:setup`
 
-Configure and verify your OpenAI Admin API key.
+Install the statusline integration (idempotent — safe to re-run).
+
+### `/codex-hud:setup-key`
+
+Configure and verify your OpenAI Admin API key (clipboard-based; only needed for dollar costs).
+
+### `/codex-hud:configure`
+
+Guided flow for display options: layout, presets, language, bar width.
+
+### `/codex-hud:uninstall`
+
+Remove the statusline integration and restore your previous statusline.
 
 ### `/codex-hud:usage-today` / `usage-week` / `usage-month`
 
@@ -200,6 +212,18 @@ Substitute `codex-hud` with your marketplace alias — `claude-community` for An
 codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud) — which solved the same usage-visibility problem for Claude Code itself. codex-hud extends that idea to OpenAI Codex and integrates with claude-hud via the included wrapper script when both are installed.
 
 ## Changelog
+
+### v0.5.1
+
+Quality release driven by a full multi-dimension code review (33 findings, adversarially verified).
+
+- **Fix (install):** the statusline entry point is now a small launcher script that resolves the current plugin install at runtime. Previously a symlink pointed into the version-numbered plugin cache, so the first `/plugin update` silently blanked the entire statusline.
+- **Security (key handling):** `/codex-hud:setup-key` now reads the Admin key from the clipboard and pipes it via stdin (`setup --key-stdin`). The key no longer appears in chat transcripts or process arguments.
+- **Fix (accuracy):** the freshest rate-limit snapshot is now chosen by event timestamp (was: file-path order, which could freeze the bars on a stale snapshot for hours); sessions spanning midnight are picked up for "today".
+- **Perf:** large rollout files (>256KB) are tail-read instead of fully parsed on every render — a 20MB active session drops from ~200ms to ~1ms per render.
+- **Robustness:** install now preserves unrelated `statusLine` fields and saves your previous statusline; `/codex-hud:uninstall` (new command) restores it. settings.json writes are atomic. The wrapper survives missing `node` on PATH with a visible message, and finds claude-hud through plugin metadata regardless of marketplace alias.
+- **Fix (costs):** pagination guard against non-advancing API cursors; a visible warning when the API truncates results.
+- Docs: corrected stale `/codex-hud:setup` → `/codex-hud:setup-key` references everywhere, completed CLI help, configure flow contradictions resolved.
 
 ### v0.5.0
 

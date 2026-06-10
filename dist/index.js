@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { resolveAdminKey, saveConfig, loadConfig } from "./config.js";
 import { testConnection, fetchCosts, fetchUsage } from "./openai-api.js";
 import { aggregateLocalUsage } from "./local-logs.js";
@@ -43,11 +44,32 @@ function getStartTime(range) {
 async function handleSetup(args) {
     const isCheck = args.includes("--check");
     const isJson = args.includes("--json");
-    // Check for key provided as argument (from setup command)
-    const keyArgIdx = args.indexOf("--key");
-    const providedKey = keyArgIdx >= 0 && keyArgIdx + 1 < args.length
-        ? args[keyArgIdx + 1]
-        : null;
+    // Preferred: key piped via stdin (keeps it out of argv and transcripts).
+    let providedKey = null;
+    if (args.includes("--key-stdin")) {
+        try {
+            providedKey = readFileSync(0, "utf-8").trim() || null;
+        }
+        catch {
+            providedKey = null;
+        }
+        if (!providedKey) {
+            const msg = "No key received on stdin.";
+            console.log(isJson ? JSON.stringify({ status: "error", error: msg }) : msg);
+            process.exit(1);
+        }
+    }
+    else {
+        // Legacy: --key <value> as an argument (visible in ps and transcripts).
+        const keyArgIdx = args.indexOf("--key");
+        providedKey =
+            keyArgIdx >= 0 && keyArgIdx + 1 < args.length
+                ? (args[keyArgIdx + 1] ?? null)
+                : null;
+        if (providedKey) {
+            console.error("Warning: --key exposes the key in process arguments; prefer piping it to --key-stdin.");
+        }
+    }
     if (providedKey) {
         const result = await testConnection(providedKey);
         if (result.ok) {
@@ -88,7 +110,7 @@ async function handleSetup(args) {
             console.log("");
             console.log("To set up, provide your Admin API key:");
             console.log("  - Set OPENAI_ADMIN_KEY environment variable, or");
-            console.log("  - Run: /codex-hud:setup and enter your key");
+            console.log("  - Run: /codex-hud:setup-key");
             console.log("");
             console.log("Get an Admin key at: https://platform.openai.com/settings/organization/admin-keys");
         }
@@ -176,6 +198,9 @@ async function handleUsage(args) {
                 if (aggregated.length > 0) {
                     console.log("### Organization Usage (OpenAI API)\n");
                     console.log(formatUsageTable(aggregated));
+                    if (result.data.has_more) {
+                        console.log("\n_Warning: results truncated by the API; totals are partial._");
+                    }
                     console.log("\n_Note: API data may lag 5-15 minutes behind real-time._");
                 }
             }
@@ -184,7 +209,7 @@ async function handleUsage(args) {
             }
         }
         else if (local.sessionCount === 0) {
-            console.log("No Admin API key configured. Run `/codex-hud:setup` to enable API-based usage tracking.");
+            console.log("No Admin API key configured. Run `/codex-hud:setup-key` to enable API-based usage tracking.");
         }
     }
 }
@@ -196,7 +221,7 @@ async function handleCosts(args) {
     const key = resolveAdminKey();
     if (!key) {
         console.log("## Codex Costs\n");
-        console.log("Admin API key required for cost data. Run `/codex-hud:setup` to configure.");
+        console.log("Admin API key required for cost data. Run `/codex-hud:setup-key` to configure.");
         return;
     }
     console.log(`## Codex Costs - ${rangeLabel}\n`);
@@ -232,6 +257,9 @@ async function handleCosts(args) {
     }
     else {
         console.log(formatCostsTable(rows));
+    }
+    if (result.data.has_more) {
+        console.log("\n_Warning: results truncated by the API; totals are partial._");
     }
     console.log("\n_Note: API data may lag 5-15 minutes behind real-time._");
 }
@@ -362,10 +390,15 @@ async function main() {
             console.log("codex-hud - Codex Usage & Costs for Claude Code");
             console.log("");
             console.log("Commands:");
-            console.log("  setup    Configure OpenAI Admin API key");
-            console.log("  usage    Show token usage (today/week/month)");
-            console.log("  costs    Show cost breakdown (today/week/month)");
-            console.log("  summary  Quick one-line summary");
+            console.log("  setup [--key K | --key-stdin]  Check or save Admin API key");
+            console.log("  usage [--week|--month]         Show token usage");
+            console.log("  costs [--week|--month]         Show cost breakdown");
+            console.log("  summary                        Quick one-line summary");
+            console.log("  label                          JSON label for claude-hud");
+            console.log("  statusline [--week|--month]    Render statusline lines");
+            console.log("  install-statusline             Install the statusline integration");
+            console.log("  uninstall-statusline           Remove it (restores previous statusline)");
+            console.log("  configure [--get|--set k=v|--reset]  Display options");
             break;
     }
 }

@@ -90,6 +90,10 @@ async function apiFetchAllPages(basePath, params, adminKey) {
         }
         if (!res.data.has_more || !res.data.next_page)
             break;
+        // A cursor that doesn't advance would duplicate buckets up to the
+        // iteration cap — bail out instead.
+        if (res.data.next_page === page)
+            break;
         page = res.data.next_page;
     }
     if (!merged) {

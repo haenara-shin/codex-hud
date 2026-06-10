@@ -11,7 +11,7 @@
     {
       "name": "codex-hud",
       "source": "./",
-      "description": "Real-time Codex rate limit monitoring in Claude Code statusline. Parses local session logs for Usage/Weekly bars with reset timers. 10 commands: setup, setup-key, configure, usage-today/week/month, costs-today/week/month, summary. 3 layouts (expanded/horizontal/compact).",
+      "description": "Real-time Codex rate limit monitoring in Claude Code statusline. Parses local session logs for Usage/Weekly bars with reset timers. 11 commands: setup, setup-key, configure, usage-today/week/month, costs-today/week/month, summary, uninstall. 3 layouts (expanded/horizontal/compact).",
       "category": "monitoring",
       "tags": ["codex", "openai", "usage", "rate-limits", "costs", "statusline", "monitoring", "hud"]
     }

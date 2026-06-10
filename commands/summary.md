@@ -1,5 +1,5 @@
 ---
-description: Quick one-line summary of today's Codex spend
+description: Quick one-line summary of today's Codex activity (cost shown if Admin key configured)
 allowed-tools: Bash(node:*)
 ---
 

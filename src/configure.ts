@@ -24,7 +24,15 @@ function getDisplayConfig(): Required<DisplayConfig> {
 
 export function showConfig(asJson = false): string {
   const cfg = getDisplayConfig();
-  if (asJson) return JSON.stringify(cfg, null, 2);
+  if (asJson) {
+    // _configured tells the /codex-hud:configure flow whether the user has
+    // ever saved display options (the merged values alone can't show this).
+    return JSON.stringify(
+      { ...cfg, _configured: loadConfig().display !== undefined },
+      null,
+      2,
+    );
+  }
 
   const lines = [
     "Current display configuration:",
