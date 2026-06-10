@@ -213,6 +213,13 @@ codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud
 
 ## Changelog
 
+### v0.5.2
+
+- Compact layout session-count suffix is now localized (`15s` / `15 세션`).
+- `costs --daily` date column labeled `(UTC)` to match API bucket boundaries.
+- Install output only claims the previous statusline was saved when it actually was.
+- Investigated narrowing command `allowed-tools` beyond `Bash(node:*)`: `${CLAUDE_PLUGIN_ROOT}` substitution is documented for skill content/hooks/MCP configs but not frontmatter, so the narrowing is deferred rather than risk silently breaking command auto-approval.
+
 ### v0.5.1
 
 Quality release driven by a full multi-dimension code review (33 findings, adversarially verified).

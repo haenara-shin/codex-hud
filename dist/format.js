@@ -72,8 +72,9 @@ export function formatCostsTable(data) {
     if (data.length === 0)
         return "No cost data found.";
     const hasDate = data.some((d) => d.date !== undefined);
+    // Bucket boundaries are UTC days (API behavior), so label them as such.
     const header = hasDate
-        ? `| Date | Line Item | Cost |`
+        ? `| Date (UTC) | Line Item | Cost |`
         : `| Line Item | Cost |`;
     const separator = hasDate
         ? `|------|-----------|------|`

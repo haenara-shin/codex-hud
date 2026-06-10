@@ -18,6 +18,7 @@ const I18N = {
     weekly: "Weekly",
     sessions: "session",
     sessionsPlural: "sessions",
+    sessionsShort: "s",
     noData: "No Codex sessions found",
     resetsIn: "resets in",
   },
@@ -26,6 +27,7 @@ const I18N = {
     weekly: "Weekly",
     sessions: "세션",
     sessionsPlural: "세션",
+    sessionsShort: " 세션",
     noData: "Codex 세션 없음",
     resetsIn: "리셋까지",
   },
@@ -210,7 +212,7 @@ function renderCompact(
   }
 
   if (cfg.showFooter && sessionCount > 0) {
-    parts.push(`${DIM}${sessionCount}s${RESET}`);
+    parts.push(`${DIM}${sessionCount}${t.sessionsShort}${RESET}`);
   }
 
   return [parts.join(` ${DIM}│${RESET} `)];

@@ -150,7 +150,12 @@ function installLauncher(wrapperPath: string): { created: boolean; error: string
   }
 }
 
-function updateSettings(): { updated: boolean; previous: string | null; error: string | null } {
+function updateSettings(): {
+  updated: boolean;
+  previous: string | null;
+  savedPrevious: boolean;
+  error: string | null;
+} {
   const settingsPath = getSettingsPath();
   const launcherPath = getLauncherPath();
 
@@ -164,6 +169,7 @@ function updateSettings(): { updated: boolean; previous: string | null; error: s
       return {
         updated: false,
         previous: null,
+        savedPrevious: false,
         error: `Could not parse ${settingsPath}: ${err instanceof Error ? err.message : String(err)}`,
       };
     }
@@ -182,13 +188,20 @@ function updateSettings(): { updated: boolean; previous: string | null; error: s
     currentCommand === launcherPath &&
     current?.["refreshInterval"] === REFRESH_INTERVAL_SECONDS
   ) {
-    return { updated: false, previous: currentCommand, error: null };
+    return {
+      updated: false,
+      previous: currentCommand,
+      savedPrevious: false,
+      error: null,
+    };
   }
 
   // Remember the user's own statusline (not a previous codex-hud install)
   // so uninstall can put it back.
+  let savedPrevious = false;
   if (current && currentCommand !== launcherPath) {
     saveConfig({ ...loadConfig(), previousStatusLine: current });
+    savedPrevious = true;
   }
 
   // Merge rather than replace: preserve unknown fields like `padding`.
@@ -201,11 +214,12 @@ function updateSettings(): { updated: boolean; previous: string | null; error: s
 
   try {
     writeFileAtomic(settingsPath, JSON.stringify(settings, null, 2) + "\n");
-    return { updated: true, previous: currentCommand, error: null };
+    return { updated: true, previous: currentCommand, savedPrevious, error: null };
   } catch (err) {
     return {
       updated: false,
       previous: currentCommand,
+      savedPrevious,
       error: err instanceof Error ? err.message : String(err),
     };
   }
@@ -248,9 +262,9 @@ export function installStatusline(): InstallResult {
   const parts = [
     `Launcher: ${getLauncherPath()} (resolves the current install at runtime)`,
     upd.updated
-      ? upd.previous
-        ? `Updated ~/.claude/settings.json (previous statusLine.command saved for uninstall: ${upd.previous})`
-        : `Set ~/.claude/settings.json statusLine.command`
+      ? upd.savedPrevious
+        ? `Updated ~/.claude/settings.json (previous statusline saved for uninstall: ${upd.previous})`
+        : `Updated ~/.claude/settings.json statusLine`
       : `~/.claude/settings.json already points to the launcher, no change`,
     "",
     "Restart Claude Code or run /reload-plugins to see the Codex statusline.",
