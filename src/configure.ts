@@ -15,7 +15,7 @@ const BOOL_KEYS: DisplayKey[] = [
 ];
 const NUMBER_KEYS: DisplayKey[] = ["barWidth"];
 const ENUM_KEYS: Record<string, readonly string[]> = {
-  layout: ["compact", "expanded", "horizontal"],
+  layout: ["compact", "expanded", "horizontal", "inline"],
   language: ["en", "ko"],
 };
 
@@ -39,7 +39,7 @@ export function showConfig(asJson = false): string {
   const lines = [
     "Current display configuration:",
     "",
-    `  layout         = ${cfg.layout}  (expanded | horizontal | compact)`,
+    `  layout         = ${cfg.layout}  (expanded | horizontal | compact | inline)`,
     `  showPlan       = ${cfg.showPlan}`,
     `  showFooter     = ${cfg.showFooter}`,
     `  showUsage      = ${cfg.showUsage}`,

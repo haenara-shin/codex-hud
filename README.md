@@ -216,6 +216,10 @@ codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud
 
 ## Changelog
 
+### v0.6.2
+
+- **Horizontal layout restored** to its classic shape (header + side-by-side bars + footer). The v0.6.1 one-liner lives on as a separate **`inline`** layout — pick whichever you prefer via `/codex-hud:configure` (4 layouts now: expanded / horizontal / inline / compact).
+
 ### v0.6.1
 
 - **Horizontal layout redesigned as a true one-liner** (claude-hud style): `Codex team gpt-5.5·medium │ Usage ████░░░░░░ 42% (2h) │ Weekly ████████░░ 81% (2d 7h) │ Context ██░░░░░░░░ 18% │ 2s`. Previously it still used separate header/footer lines; now everything — bars included — sits on one line, matching the look of claude-hud's metric row above it.

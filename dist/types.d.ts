@@ -1,5 +1,5 @@
 export interface DisplayConfig {
-    layout?: "compact" | "expanded" | "horizontal";
+    layout?: "compact" | "expanded" | "horizontal" | "inline";
     showPlan?: boolean;
     showFooter?: boolean;
     showUsage?: boolean;

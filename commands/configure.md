@@ -34,7 +34,8 @@ Advanced fields like `colors` are not yet exposed via this flow.
 - multiSelect: false
 - options:
   - "Expanded (Recommended)" — Each metric on its own line with progress bars
-  - "Horizontal" — Everything on ONE line WITH progress bars (claude-hud style)
+  - "Horizontal" — Header + all bars side-by-side on one metrics line + footer
+  - "Inline" — Everything on ONE line WITH progress bars (claude-hud style)
   - "Compact" — Everything on one line, percentages only (no bars)
 
 ### Q2: Preset
@@ -74,10 +75,11 @@ Build questions based on current values. Show current value in the question text
 - header: "Layout"
 - question: "Layout (current: {currentLayout})?"
 - multiSelect: false
-- options:
+- options (max 4 — show "Keep current" plus the three layouts the user is NOT on):
   - "Keep current"
   - "Switch to Expanded" (hide if already expanded)
   - "Switch to Horizontal" (hide if already horizontal)
+  - "Switch to Inline" (hide if already inline)
   - "Switch to Compact" (hide if already compact)
 
 ### Q2: Turn Off
@@ -132,7 +134,7 @@ Layout always comes from Q1; presets only set the visibility flags below.
 
 | UI option | CLI key | Values |
 |-----------|---------|--------|
-| Layout | `layout` | `expanded` / `horizontal` / `compact` |
+| Layout | `layout` | `expanded` / `horizontal` / `inline` / `compact` |
 | Plan badge | `showPlan` | `true` / `false` |
 | Session footer | `showFooter` | `true` / `false` |
 | Usage bar (5h) | `showUsage` | `true` / `false` |
@@ -171,7 +173,14 @@ Context ██░░░░░░░░ 18% (47k/258k)
 15 sessions | team
 ```
 
-Horizontal (one line, claude-hud style):
+Horizontal:
+```
+── Codex gpt-5.5·medium ──
+Usage ██░░░░░░░░ 15% (4h 37m)  │  Weekly █░░░░░░░░░ 3% (6d 9h)  │  Context ██░░░░░░░░ 18%
+15 sessions | team
+```
+
+Inline (one line, claude-hud style):
 ```
 Codex team gpt-5.5·medium │ Usage ██░░░░░░░░ 15% (4h 37m) │ Weekly █░░░░░░░░░ 3% (6d 9h) │ Context ██░░░░░░░░ 18% │ 15s
 ```
