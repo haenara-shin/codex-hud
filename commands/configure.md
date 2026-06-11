@@ -34,8 +34,8 @@ Advanced fields like `colors` are not yet exposed via this flow.
 - multiSelect: false
 - options:
   - "Expanded (Recommended)" — Each metric on its own line with progress bars
-  - "Horizontal" — Usage and Weekly side-by-side on one line (saves vertical space)
-  - "Compact" — Everything on a single line with `│` separators
+  - "Horizontal" — Everything on ONE line WITH progress bars (claude-hud style)
+  - "Compact" — Everything on one line, percentages only (no bars)
 
 ### Q2: Preset
 - header: "Preset"
@@ -171,11 +171,9 @@ Context ██░░░░░░░░ 18% (47k/258k)
 15 sessions | team
 ```
 
-Horizontal:
+Horizontal (one line, claude-hud style):
 ```
-── Codex gpt-5.5·medium ──
-Usage ██░░░░░░░░ 15% (4h 37m)  │  Weekly █░░░░░░░░░ 3% (6d 9h)  │  Context ██░░░░░░░░ 18%
-15 sessions | team
+Codex team gpt-5.5·medium │ Usage ██░░░░░░░░ 15% (4h 37m) │ Weekly █░░░░░░░░░ 3% (6d 9h) │ Context ██░░░░░░░░ 18% │ 15s
 ```
 
 Compact:

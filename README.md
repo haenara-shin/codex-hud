@@ -216,6 +216,10 @@ codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud
 
 ## Changelog
 
+### v0.6.1
+
+- **Horizontal layout redesigned as a true one-liner** (claude-hud style): `Codex team gpt-5.5·medium │ Usage ████░░░░░░ 42% (2h) │ Weekly ████████░░ 81% (2d 7h) │ Context ██░░░░░░░░ 18% │ 2s`. Previously it still used separate header/footer lines; now everything — bars included — sits on one line, matching the look of claude-hud's metric row above it.
+
 ### v0.6.0
 
 - **Model + effort badge**: the header now shows which model and reasoning effort your most recent Codex turn used (e.g. `── Codex gpt-5.5·medium ──`). Toggle with `showModel`.
