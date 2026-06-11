@@ -5,6 +5,8 @@ const BOOL_KEYS = [
     "showFooter",
     "showUsage",
     "showWeekly",
+    "showModel",
+    "showContext",
     "fallbackToWeek",
 ];
 const NUMBER_KEYS = ["barWidth"];
@@ -31,6 +33,8 @@ export function showConfig(asJson = false) {
         `  showFooter     = ${cfg.showFooter}`,
         `  showUsage      = ${cfg.showUsage}`,
         `  showWeekly     = ${cfg.showWeekly}`,
+        `  showModel      = ${cfg.showModel}`,
+        `  showContext    = ${cfg.showContext}`,
         `  barWidth       = ${cfg.barWidth}`,
         `  fallbackToWeek = ${cfg.fallbackToWeek}`,
         `  language       = ${cfg.language}  (en | ko)`,

@@ -14,12 +14,13 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" configure --get --json
 Parse the JSON to determine current values. If `_configured` is `true`, use **Flow B (existing user)**. Otherwise use **Flow A (new user)**.
 
 Defaults:
-- `layout: "expanded"`, `showPlan: true`, `showFooter: true`, `showUsage: true`, `showWeekly: true`, `barWidth: 10`, `fallbackToWeek: true`, `language: "en"`
+- `layout: "expanded"`, `showPlan: true`, `showFooter: true`, `showUsage: true`, `showWeekly: true`, `showModel: true`, `showContext: true`, `barWidth: 10`, `fallbackToWeek: true`, `language: "en"`
 
 ## Always On (not configurable)
 - Codex header badge (`── Codex ──`)
 - The data source (local Codex session logs at `~/.codex/sessions/`)
 - Rate limit windows themselves (5h Usage, 7d Weekly)
+- The red `⚠ LIMIT` alert when Codex reports a reached rate limit (it only appears while a limit is actually hit)
 
 Advanced fields like `colors` are not yet exposed via this flow.
 
@@ -88,6 +89,8 @@ Build questions based on current values. Show current value in the question text
   - "Session footer" — `showFooter` → false
   - "Usage bar (5h)" — `showUsage` → false
   - "Weekly bar (7d)" — `showWeekly` → false
+  - "Model badge" — `showModel` → false
+  - "Context bar" — `showContext` → false
   - "Fallback to week" — `fallbackToWeek` → false
 
 If nothing is ON, say "Nothing to disable" and skip.
@@ -134,6 +137,8 @@ Layout always comes from Q1; presets only set the visibility flags below.
 | Session footer | `showFooter` | `true` / `false` |
 | Usage bar (5h) | `showUsage` | `true` / `false` |
 | Weekly bar (7d) | `showWeekly` | `true` / `false` |
+| Model badge | `showModel` | `true` / `false` |
+| Context bar | `showContext` | `true` / `false` |
 | Fallback to week | `fallbackToWeek` | `true` / `false` |
 | Bar width | `barWidth` | `1–40` |
 | Language | `language` | `en` / `ko` |
@@ -159,22 +164,23 @@ language   : en       → ko
 
 Expanded:
 ```
-── Codex team ──
+── Codex gpt-5.5·medium ──
 Usage   ██░░░░░░░░ 15% (resets in 4h 37m)
 Weekly  █░░░░░░░░░ 3%  (resets in 6d 9h)
+Context ██░░░░░░░░ 18% (47k/258k)
 15 sessions | team
 ```
 
 Horizontal:
 ```
-── Codex team ──
-Usage ██░░░░░░░░ 15% (4h 37m)  │  Weekly █░░░░░░░░░ 3% (6d 9h)
+── Codex gpt-5.5·medium ──
+Usage ██░░░░░░░░ 15% (4h 37m)  │  Weekly █░░░░░░░░░ 3% (6d 9h)  │  Context ██░░░░░░░░ 18%
 15 sessions | team
 ```
 
 Compact:
 ```
-Codex team │ Usage 15% (4h 37m) │ Weekly 3% (6d 9h) │ 15s
+Codex team gpt-5.5·medium │ Usage 15% (4h 37m) │ Weekly 3% (6d 9h) │ Ctx 18% │ 15s
 ```
 
 Ask confirmation with `AskUserQuestion`:

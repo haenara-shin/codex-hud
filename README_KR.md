@@ -41,11 +41,14 @@ my-project
 Context ██░░░░░░░░ 19%
 Usage   █░░░░░░░░░ 14% (resets in 4h 37m)
 Weekly  ██░░░░░░░░ 22% (resets in 5d 18h)
-── Codex team ──                      <- codex-hud
+── Codex gpt-5.5·medium ──            <- codex-hud
 Usage   █░░░░░░░░░ 1% (resets in 5h)
 Weekly  ░░░░░░░░░░ 0% (resets in 7d)
+Context ██░░░░░░░░ 18% (47k/258k)
 1 session | team
 ```
+
+헤더에는 가장 최근 Codex 턴이 사용한 모델·reasoning effort가, Context 바에는 해당 세션의 컨텍스트 윈도우 점유율이 표시됩니다. Codex가 rate limit 도달을 보고하면 빨간 `⚠ 한도 초과` 경고가 헤더에 나타납니다 (퍼센트 바가 100% 미만이어도 차단되는 경우를 잡아줍니다).
 
 ## 설치
 
@@ -211,6 +214,13 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 codex-hud는 Claude Code 자체의 사용량 가시성 문제를 statusline으로 해결한 [claude-hud](https://github.com/jarrodwatts/claude-hud)에서 영감을 받아 만들어졌습니다. 같은 아이디어를 OpenAI Codex로 확장한 것이며, 두 플러그인이 함께 설치된 경우 wrapper 스크립트로 자연스럽게 통합됩니다.
 
 ## 변경 이력
+
+### v0.6.0
+
+- **모델 + effort 배지**: 가장 최근 Codex 턴이 사용한 모델과 reasoning effort를 헤더에 표시 (예: `── Codex gpt-5.5·medium ──`). `showModel`로 토글.
+- **Context 바**: 최근 세션의 컨텍스트 윈도우 점유율 (`Context ██░░░░░░░░ 18% (47k/258k)`) — claude-hud의 간판 기능을 Codex 쪽에도. `showContext`로 토글.
+- **`⚠ 한도 초과` 경고**: Codex가 `rate_limit_reached_type`을 보고하면 헤더에 빨간 배지 표시 — 퍼센트 바가 100% 미만인데 요청이 차단되는 경우를 잡아줌.
+- 세 요소 모두 3개 레이아웃(expanded/horizontal/compact)에서 렌더되며, 기존 tail-read 윈도우에서 나오는 데이터라 추가 I/O 없음.
 
 ### v0.5.2
 

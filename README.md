@@ -41,11 +41,14 @@ my-project
 Context ██░░░░░░░░ 19%
 Usage   █░░░░░░░░░ 14% (resets in 4h 37m)
 Weekly  ██░░░░░░░░ 22% (resets in 5d 18h)
-── Codex team ──                      <- codex-hud
+── Codex gpt-5.5·medium ──            <- codex-hud
 Usage   █░░░░░░░░░ 1% (resets in 5h)
 Weekly  ░░░░░░░░░░ 0% (resets in 7d)
+Context ██░░░░░░░░ 18% (47k/258k)
 1 session | team
 ```
+
+The header shows the model and reasoning effort of your most recent Codex turn, and the Context bar tracks that session's context-window occupancy. When Codex reports a reached rate limit, a red `⚠ LIMIT` alert appears in the header (even when the percentage bars sit below 100%).
 
 ## Installation
 
@@ -212,6 +215,13 @@ Substitute `codex-hud` with your marketplace alias — `claude-community` for An
 codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud) — which solved the same usage-visibility problem for Claude Code itself. codex-hud extends that idea to OpenAI Codex and integrates with claude-hud via the included wrapper script when both are installed.
 
 ## Changelog
+
+### v0.6.0
+
+- **Model + effort badge**: the header now shows which model and reasoning effort your most recent Codex turn used (e.g. `── Codex gpt-5.5·medium ──`). Toggle with `showModel`.
+- **Context bar**: context-window occupancy of the most recent session (`Context ██░░░░░░░░ 18% (47k/258k)`), mirroring claude-hud's context display for the Codex side. Toggle with `showContext`.
+- **`⚠ LIMIT` alert**: when Codex reports `rate_limit_reached_type`, a red badge appears in the header — catching the case where requests are blocked while the percentage bars are still below 100%.
+- All three render in every layout (expanded / horizontal / compact) and come from the same tail-read window — no extra I/O.
 
 ### v0.5.2
 

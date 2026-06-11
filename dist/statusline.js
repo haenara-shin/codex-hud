@@ -1,5 +1,6 @@
 import { aggregateLocalUsage } from "./local-logs.js";
 import { loadConfig } from "./config.js";
+import { formatNumber } from "./format.js";
 import { DEFAULT_DISPLAY } from "./types.js";
 // ANSI escape codes matching claude-hud's color scheme
 const RESET = "\x1b[0m";
@@ -12,20 +13,26 @@ const I18N = {
     en: {
         usage: "Usage",
         weekly: "Weekly",
+        context: "Context",
+        contextShort: "Ctx",
         sessions: "session",
         sessionsPlural: "sessions",
         sessionsShort: "s",
         noData: "No Codex sessions found",
         resetsIn: "resets in",
+        limit: "LIMIT",
     },
     ko: {
         usage: "Usage",
         weekly: "Weekly",
+        context: "Context",
+        contextShort: "Ctx",
         sessions: "세션",
         sessionsPlural: "세션",
         sessionsShort: " 세션",
         noData: "Codex 세션 없음",
         resetsIn: "리셋까지",
+        limit: "한도 초과",
     },
 };
 // ── Color helpers ──
@@ -64,14 +71,28 @@ function formatResetTime(resetsAt) {
     }
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
+// `── Codex gpt-5.5·medium ⚠ LIMIT ──` — model badge + limit alert.
+function headerBadges(data, cfg, t) {
+    let badges = "";
+    if (cfg.showModel && data.model) {
+        const effortPart = data.model.effort ? `·${data.model.effort}` : "";
+        badges += ` ${data.model.model}${effortPart}`;
+    }
+    if (data.rateLimits?.rate_limit_reached_type) {
+        badges += ` ${RESET}${RED}⚠ ${t.limit}${RESET}${DIM}`;
+    }
+    return badges;
+}
+function contextPercent(context) {
+    return Math.min(100, (context.used / context.window) * 100);
+}
 // ── Expanded layout (multi-line with bars) ──
-function renderExpanded(rateLimits, sessionCount, cfg) {
+function renderExpanded(data, cfg) {
     const lines = [];
     const t = I18N[cfg.language];
+    const { rateLimits, sessionCount } = data;
     const plan = rateLimits?.plan_type ?? "";
-    // Header
-    const planLabel = cfg.showPlan && plan ? ` ${plan}` : "";
-    lines.push(`${DIM}── Codex${planLabel} ──${RESET}`);
+    lines.push(`${DIM}── Codex${headerBadges(data, cfg, t)} ──${RESET}`);
     if (!rateLimits && sessionCount === 0) {
         lines.push(`${DIM}${t.noData}${RESET}`);
         return lines;
@@ -94,6 +115,13 @@ function renderExpanded(rateLimits, sessionCount, cfg) {
             lines.push(`${DIM}${t.weekly}${RESET}  ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
         }
     }
+    if (cfg.showContext && data.context) {
+        const p = contextPercent(data.context);
+        const color = getQuotaColor(p);
+        const bar = quotaBar(p, cfg.barWidth);
+        const detail = `${DIM}(${formatNumber(data.context.used)}/${formatNumber(data.context.window)})${RESET}`;
+        lines.push(`${DIM}${t.context}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET} ${detail}`);
+    }
     if (cfg.showFooter && sessionCount > 0) {
         const label = sessionCount === 1 ? t.sessions : t.sessionsPlural;
         const planPart = cfg.showPlan && plan ? ` | ${plan}` : "";
@@ -101,19 +129,18 @@ function renderExpanded(rateLimits, sessionCount, cfg) {
     }
     return lines;
 }
-// ── Horizontal layout (Usage + Weekly side-by-side) ──
-function renderHorizontal(rateLimits, sessionCount, cfg) {
+// ── Horizontal layout (metrics side-by-side) ──
+function renderHorizontal(data, cfg) {
     const lines = [];
     const t = I18N[cfg.language];
+    const { rateLimits, sessionCount } = data;
     const plan = rateLimits?.plan_type ?? "";
-    // Header
-    const planLabel = cfg.showPlan && plan ? ` ${plan}` : "";
-    lines.push(`${DIM}── Codex${planLabel} ──${RESET}`);
+    lines.push(`${DIM}── Codex${headerBadges(data, cfg, t)} ──${RESET}`);
     if (!rateLimits && sessionCount === 0) {
         lines.push(`${DIM}${t.noData}${RESET}`);
         return lines;
     }
-    // Usage and Weekly on a single line, separated by │
+    // Metrics on a single line, separated by │
     const metricParts = [];
     if (rateLimits && cfg.showUsage && rateLimits.primary) {
         const p = rateLimits.primary.used_percent;
@@ -131,6 +158,12 @@ function renderHorizontal(rateLimits, sessionCount, cfg) {
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
         metricParts.push(`${DIM}${t.weekly}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
     }
+    if (cfg.showContext && data.context) {
+        const p = contextPercent(data.context);
+        const color = getQuotaColor(p);
+        const bar = quotaBar(p, cfg.barWidth);
+        metricParts.push(`${DIM}${t.context}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}`);
+    }
     if (metricParts.length > 0) {
         lines.push(metricParts.join(` ${DIM}│${RESET}  `));
     }
@@ -142,13 +175,14 @@ function renderHorizontal(rateLimits, sessionCount, cfg) {
     return lines;
 }
 // ── Compact layout (single line with separators) ──
-function renderCompact(rateLimits, sessionCount, cfg) {
+function renderCompact(data, cfg) {
     const t = I18N[cfg.language];
+    const { rateLimits, sessionCount } = data;
     const plan = rateLimits?.plan_type ?? "";
     const parts = [];
-    // Prefix
+    // Prefix keeps the plan (compact has no footer); badges follow.
     const planLabel = cfg.showPlan && plan ? ` ${plan}` : "";
-    parts.push(`${DIM}Codex${planLabel}${RESET}`);
+    parts.push(`${DIM}Codex${planLabel}${headerBadges(data, cfg, t)}${RESET}`);
     if (!rateLimits && sessionCount === 0) {
         parts.push(`${DIM}${t.noData}${RESET}`);
         return [parts.join(` ${DIM}│${RESET} `)];
@@ -169,6 +203,11 @@ function renderCompact(rateLimits, sessionCount, cfg) {
             parts.push(`${DIM}${t.weekly}${RESET} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
         }
     }
+    if (cfg.showContext && data.context) {
+        const p = contextPercent(data.context);
+        const color = getQuotaColor(p);
+        parts.push(`${DIM}${t.contextShort}${RESET} ${color}${p.toFixed(0)}%${RESET}`);
+    }
     if (cfg.showFooter && sessionCount > 0) {
         parts.push(`${DIM}${sessionCount}${t.sessionsShort}${RESET}`);
     }
@@ -185,11 +224,17 @@ export function renderStatusLines(range = "today") {
             local = fallback;
         }
     }
+    const data = {
+        rateLimits: local.latestRateLimits,
+        model: local.latestModel,
+        context: local.latestContext,
+        sessionCount: local.sessionCount,
+    };
     if (cfg.layout === "compact") {
-        return renderCompact(local.latestRateLimits, local.sessionCount, cfg);
+        return renderCompact(data, cfg);
     }
     if (cfg.layout === "horizontal") {
-        return renderHorizontal(local.latestRateLimits, local.sessionCount, cfg);
+        return renderHorizontal(data, cfg);
     }
-    return renderExpanded(local.latestRateLimits, local.sessionCount, cfg);
+    return renderExpanded(data, cfg);
 }

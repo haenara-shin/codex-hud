@@ -5,6 +5,8 @@ export const DEFAULT_DISPLAY = {
     showFooter: true,
     showUsage: true,
     showWeekly: true,
+    showModel: true,
+    showContext: true,
     barWidth: 10,
     fallbackToWeek: true,
     language: "en",

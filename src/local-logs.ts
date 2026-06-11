@@ -74,28 +74,68 @@ interface ScanResult {
   lastUsage: TokenUsage | null;
   lastRateLimits: RateLimits | null;
   rlTimestamp: number | null; // epoch ms of the entry carrying lastRateLimits
+  model: string | null;
+  effort: string | null;
+  modelTimestamp: number | null;
+  contextUsed: number | null;
+  contextWindow: number | null;
+  contextTimestamp: number | null;
+}
+
+function parseEntryTimestamp(entry: { timestamp?: unknown }): number | null {
+  const ts =
+    typeof entry.timestamp === "string" ? Date.parse(entry.timestamp) : NaN;
+  return Number.isNaN(ts) ? null : ts;
 }
 
 function scanLines(content: string): ScanResult {
-  let lastUsage: TokenUsage | null = null;
-  let lastRateLimits: RateLimits | null = null;
-  let rlTimestamp: number | null = null;
+  const result: ScanResult = {
+    lastUsage: null,
+    lastRateLimits: null,
+    rlTimestamp: null,
+    model: null,
+    effort: null,
+    modelTimestamp: null,
+    contextUsed: null,
+    contextWindow: null,
+    contextTimestamp: null,
+  };
 
   for (const line of content.split("\n")) {
     if (!line.trim()) continue;
     try {
       const entry = JSON.parse(line);
+
+      if (entry.type === "turn_context" && entry.payload) {
+        if (typeof entry.payload.model === "string") {
+          result.model = entry.payload.model;
+          result.effort =
+            typeof entry.payload.effort === "string"
+              ? entry.payload.effort
+              : null;
+          result.modelTimestamp = parseEntryTimestamp(entry);
+        }
+      }
+
       if (entry.type === "event_msg" && entry.payload?.type === "token_count") {
         if (entry.payload.info?.total_token_usage) {
-          lastUsage = entry.payload.info.total_token_usage as TokenUsage;
+          result.lastUsage = entry.payload.info.total_token_usage as TokenUsage;
+        }
+        // Context occupancy: what the last turn sent + received.
+        const last = entry.payload.info?.last_token_usage as
+          | TokenUsage
+          | undefined;
+        if (last && typeof last.input_tokens === "number") {
+          result.contextUsed = last.input_tokens + (last.output_tokens ?? 0);
+          result.contextWindow =
+            typeof entry.payload.info?.model_context_window === "number"
+              ? entry.payload.info.model_context_window
+              : null;
+          result.contextTimestamp = parseEntryTimestamp(entry);
         }
         if (entry.payload.rate_limits) {
-          lastRateLimits = entry.payload.rate_limits as RateLimits;
-          const ts =
-            typeof entry.timestamp === "string"
-              ? Date.parse(entry.timestamp)
-              : NaN;
-          rlTimestamp = Number.isNaN(ts) ? null : ts;
+          result.lastRateLimits = entry.payload.rate_limits as RateLimits;
+          result.rlTimestamp = parseEntryTimestamp(entry);
         }
       }
     } catch {
@@ -104,7 +144,7 @@ function scanLines(content: string): ScanResult {
     }
   }
 
-  return { lastUsage, lastRateLimits, rlTimestamp };
+  return result;
 }
 
 function readTailContent(
@@ -146,21 +186,38 @@ export function parseSessionLog(filePath: string): ParsedSession {
     ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`
     : "unknown";
 
-  let totalUsage: TokenUsage | null = null;
-  let rateLimits: RateLimits | null = null;
-  let rlTimestamp: number | null = null;
+  const session: ParsedSession = {
+    totalUsage: null,
+    rateLimits: null,
+    rlTimestamp: null,
+    model: null,
+    effort: null,
+    modelTimestamp: null,
+    contextUsed: null,
+    contextWindow: null,
+    contextTimestamp: null,
+    date,
+    filePath,
+  };
 
   try {
     const { size, mtimeMs } = statSync(filePath);
     const scan = scanFile(filePath, size);
-    totalUsage = scan.lastUsage;
-    rateLimits = scan.lastRateLimits;
-    rlTimestamp = scan.rlTimestamp ?? (rateLimits ? mtimeMs : null);
+    session.totalUsage = scan.lastUsage;
+    session.rateLimits = scan.lastRateLimits;
+    session.rlTimestamp = scan.rlTimestamp ?? (scan.lastRateLimits ? mtimeMs : null);
+    session.model = scan.model;
+    session.effort = scan.effort;
+    session.modelTimestamp = scan.modelTimestamp ?? (scan.model ? mtimeMs : null);
+    session.contextUsed = scan.contextUsed;
+    session.contextWindow = scan.contextWindow;
+    session.contextTimestamp =
+      scan.contextTimestamp ?? (scan.contextUsed != null ? mtimeMs : null);
   } catch {
     // skip unreadable files
   }
 
-  return { totalUsage, rateLimits, rlTimestamp, date, filePath };
+  return session;
 }
 
 function emptyUsage(): TokenUsage {
@@ -179,18 +236,38 @@ export function aggregateLocalUsage(range: DateRange): AggregatedUsage {
   const totals = emptyUsage();
   let latestRateLimits: RateLimits | null = null;
   let latestRlTimestamp = -Infinity;
+  let latestModel: AggregatedUsage["latestModel"] = null;
+  let latestModelTimestamp = -Infinity;
+  let latestContext: AggregatedUsage["latestContext"] = null;
+  let latestContextTimestamp = -Infinity;
 
-  // Rate limits are a point-in-time snapshot, so pick the one whose EVENT
-  // timestamp is newest. File-path order is wrong here: paths sort by
-  // session START time, so a long-running session's fresh snapshot would
-  // lose to a stale one from a later-started session.
-  const considerRateLimits = (session: ParsedSession): void => {
+  // Rate limits, model, and context are point-in-time snapshots, so pick
+  // the one whose EVENT timestamp is newest. File-path order is wrong here:
+  // paths sort by session START time, so a long-running session's fresh
+  // snapshot would lose to a stale one from a later-started session.
+  const considerTelemetry = (session: ParsedSession): void => {
     if (
       session.rateLimits &&
       (session.rlTimestamp ?? 0) > latestRlTimestamp
     ) {
       latestRateLimits = session.rateLimits;
       latestRlTimestamp = session.rlTimestamp ?? 0;
+    }
+    if (session.model && (session.modelTimestamp ?? 0) > latestModelTimestamp) {
+      latestModel = { model: session.model, effort: session.effort };
+      latestModelTimestamp = session.modelTimestamp ?? 0;
+    }
+    if (
+      session.contextUsed != null &&
+      session.contextWindow != null &&
+      session.contextWindow > 0 &&
+      (session.contextTimestamp ?? 0) > latestContextTimestamp
+    ) {
+      latestContext = {
+        used: session.contextUsed,
+        window: session.contextWindow,
+      };
+      latestContextTimestamp = session.contextTimestamp ?? 0;
     }
   };
 
@@ -207,15 +284,15 @@ export function aggregateLocalUsage(range: DateRange): AggregatedUsage {
       totals.total_tokens += session.totalUsage.total_tokens;
     }
 
-    considerRateLimits(session);
+    considerTelemetry(session);
   }
 
   // A session that spans midnight keeps writing into yesterday's file, so
-  // for the "today" range also scan the previous day — rate limits only;
+  // for the "today" range also scan the previous day — telemetry only;
   // usage totals still attribute to the session's start date.
   if (range === "today") {
     for (const file of listLogs(dayDir(1))) {
-      considerRateLimits(parseSessionLog(file));
+      considerTelemetry(parseSessionLog(file));
     }
   }
 
@@ -223,6 +300,8 @@ export function aggregateLocalUsage(range: DateRange): AggregatedUsage {
     sessions,
     totals,
     latestRateLimits,
+    latestModel,
+    latestContext,
     sessionCount: sessions.filter((s) => s.totalUsage !== null).length,
   };
 }
