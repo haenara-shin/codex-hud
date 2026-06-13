@@ -216,6 +216,10 @@ codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud
 
 ## Changelog
 
+### v0.7.0
+
+- **Live previews in `/codex-hud:configure`.** When choosing a layout, each option now shows a side-by-side preview of how your statusline will actually look — rendered by the real statusline code (sample data, with your current toggles applied), so the preview can never drift from the result. Adds a `preview` CLI subcommand (`node dist/index.js preview --set layout=compact`) that emits plain, color-free output for the question UI.
+
 ### v0.6.2
 
 - **Horizontal layout restored** to its classic shape (header + side-by-side bars + footer). The v0.6.1 one-liner lives on as a separate **`inline`** layout — pick whichever you prefer via `/codex-hud:configure` (4 layouts now: expanded / horizontal / inline / compact).

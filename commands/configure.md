@@ -26,13 +26,29 @@ Advanced fields like `colors` are not yet exposed via this flow.
 
 ---
 
+## Live previews (use these in the option `preview` fields)
+
+`AskUserQuestion` options support a `preview` field that renders next to the choices. Use it so the user SEES the effect before picking. Generate previews from the real renderer (never hand-write them — they must match the code):
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" preview --set <key>=<value> [--set <key>=<value> ...]
+```
+
+- It renders representative **sample data** as plain text (no color codes), with the overrides applied **on top of the user's current saved config** — so toggles the user already has set are reflected.
+- For the **Layout** question (single-select, so previews ARE supported): run it once per layout (`--set layout=expanded`, `=horizontal`, `=inline`, `=compact`) and put each result in that option's `preview`.
+- `preview` is NOT supported on multiSelect questions, so the on/off toggle questions have no per-option preview — instead show a combined preview in the final confirmation step.
+- Pass every override you're previewing together (e.g. when previewing layouts for an existing user who also turned off the plan badge, include `--set showPlan=false`) so the preview matches what saving would actually produce.
+
+---
+
 ## Flow A: New User (4 Questions)
 
 ### Q1: Layout
 - header: "Layout"
 - question: "Choose your statusline layout:"
 - multiSelect: false
-- options:
+- **FIRST** run `preview --set layout=expanded`, `=horizontal`, `=inline`, `=compact` and use each result as that option's `preview` field (see "Live previews" above).
+- options (each WITH its generated `preview`):
   - "Expanded (Recommended)" — Each metric on its own line with progress bars
   - "Horizontal" — Header + all bars side-by-side on one metrics line + footer
   - "Inline" — Everything on ONE line WITH progress bars (claude-hud style)
@@ -42,6 +58,7 @@ Advanced fields like `colors` are not yet exposed via this flow.
 - header: "Preset"
 - question: "Choose a starting preset:"
 - multiSelect: false
+- Optionally attach a `preview` per preset: run `preview` with the preset's flags plus the layout chosen in Q1 (or `layout=expanded` if asking Q1+Q2 together), e.g. Bars only → `preview --set layout=expanded --set showPlan=false --set showFooter=false`.
 - options:
   - "Full (Recommended)" — Plan badge + both bars + session footer
   - "Bars only" — Both Usage/Weekly bars, no plan badge or footer
@@ -75,7 +92,8 @@ Build questions based on current values. Show current value in the question text
 - header: "Layout"
 - question: "Layout (current: {currentLayout})?"
 - multiSelect: false
-- options (max 4 — show "Keep current" plus the three layouts the user is NOT on):
+- **FIRST** generate a `preview` for each option: for "Keep current" run `preview` with no `--set layout` (current layout), and for each "Switch to X" run `preview --set layout=X`. The user's other saved toggles are already reflected. Attach each as the option's `preview`.
+- options (max 4 — show "Keep current" plus the three layouts the user is NOT on), each WITH its generated `preview`:
   - "Keep current"
   - "Switch to Expanded" (hide if already expanded)
   - "Switch to Horizontal" (hide if already horizontal)
@@ -162,33 +180,13 @@ showUsage  : true     → (unchanged)
 language   : en       → ko
 ```
 
-**Show a mock preview** (use plain text; the user will see real ANSI after reload):
+**Show the final preview** — render it from the resolved settings so it exactly matches what will be saved (sample data, plain text; the user sees real colors after reload):
 
-Expanded:
-```
-── Codex gpt-5.5·medium ──
-Usage   ██░░░░░░░░ 15% (resets in 4h 37m)
-Weekly  █░░░░░░░░░ 3%  (resets in 6d 9h)
-Context ██░░░░░░░░ 18% (47k/258k)
-15 sessions | team
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" preview --set <key>=<value> [--set <key>=<value> ...]
 ```
 
-Horizontal:
-```
-── Codex gpt-5.5·medium ──
-Usage ██░░░░░░░░ 15% (4h 37m)  │  Weekly █░░░░░░░░░ 3% (6d 9h)  │  Context ██░░░░░░░░ 18%
-15 sessions | team
-```
-
-Inline (one line, claude-hud style):
-```
-Codex team gpt-5.5·medium │ Usage ██░░░░░░░░ 15% (4h 37m) │ Weekly █░░░░░░░░░ 3% (6d 9h) │ Context ██░░░░░░░░ 18% │ 15s
-```
-
-Compact:
-```
-Codex team gpt-5.5·medium │ Usage 15% (4h 37m) │ Weekly 3% (6d 9h) │ Ctx 18% │ 15s
-```
+Pass every key the user changed (layout + any toggles + language + barWidth). Show the output in a code block above the confirmation.
 
 Ask confirmation with `AskUserQuestion`:
 - header: "Confirm"

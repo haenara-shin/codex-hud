@@ -327,6 +327,15 @@ function renderCompact(
   return [parts.join(` ${DIM}│${RESET} `)];
 }
 
+// ── Dispatch ──
+
+function dispatch(data: RenderData, cfg: Required<DisplayConfig>): string[] {
+  if (cfg.layout === "compact") return renderCompact(data, cfg);
+  if (cfg.layout === "horizontal") return renderHorizontal(data, cfg);
+  if (cfg.layout === "inline") return renderInline(data, cfg);
+  return renderExpanded(data, cfg);
+}
+
 // ── Main export ──
 
 export function renderStatusLines(range: DateRange = "today"): string[] {
@@ -349,14 +358,50 @@ export function renderStatusLines(range: DateRange = "today"): string[] {
     sessionCount: local.sessionCount,
   };
 
-  if (cfg.layout === "compact") {
-    return renderCompact(data, cfg);
-  }
-  if (cfg.layout === "horizontal") {
-    return renderHorizontal(data, cfg);
-  }
-  if (cfg.layout === "inline") {
-    return renderInline(data, cfg);
-  }
-  return renderExpanded(data, cfg);
+  return dispatch(data, cfg);
+}
+
+// ── Preview (for /codex-hud:configure) ──
+
+// Representative sample so layout/toggle differences are always visible, even
+// when the user has no recent Codex sessions. Rendered by the SAME code paths
+// as the live statusline, so a preview can never drift from reality.
+function sampleData(): RenderData {
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    rateLimits: {
+      limit_id: "codex",
+      limit_name: null,
+      primary: { used_percent: 15, window_minutes: 300, resets_at: now + 16620 },
+      secondary: {
+        used_percent: 3,
+        window_minutes: 10080,
+        resets_at: now + 551400,
+      },
+      credits: null,
+      plan_type: "team",
+    },
+    model: { model: "gpt-5.5", effort: "medium" },
+    context: { used: 47000, window: 258400 },
+    sessionCount: 15,
+  };
+}
+
+function stripAnsi(s: string): string {
+  // eslint-disable-next-line no-control-regex
+  return s.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+/**
+ * Render the statusline for the user's stored config plus `overrides`, using
+ * sample data, as plain text (no ANSI) suitable for an AskUserQuestion preview.
+ */
+export function renderPreview(overrides: Partial<DisplayConfig> = {}): string[] {
+  const stored = loadConfig().display ?? {};
+  const cfg: Required<DisplayConfig> = {
+    ...DEFAULT_DISPLAY,
+    ...stored,
+    ...overrides,
+  };
+  return dispatch(sampleData(), cfg).map(stripAnsi);
 }
