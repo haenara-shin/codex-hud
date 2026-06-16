@@ -24,31 +24,30 @@
 
 ## 주요 기능
 
-- **실시간 Statusline**: [claude-hud](https://github.com/jarrodwatts/claude-hud)와 통합하여 Claude Code statusline 아래에 Codex Usage/Weekly 레이트 리밋 표시. 세션이 유휴 상태일 때도 리셋 카운트다운이 갱신되도록 60초 주기 새로고침
-- **슬래시 명령어**: 사용량, 비용, 요약 전용 명령어
-- **이중 데이터 소스**: 로컬 Codex CLI 세션 로그 (API 키 불필요) + OpenAI Usage API (선택, 달러 비용 조회)
-- **플랜 무관 동작**: 모든 Codex 플랜(free, Plus, Pro, Team, Enterprise)에서 정상 렌더 — 보고되지 않은 레이트 리밋 윈도우는 건너뛰며 statusline을 깨뜨리지 않음
-- **npm 런타임 의존성 제로**: Node.js 내장 모듈만 사용 (statusline wrapper는 Bash와 Perl 필요)
-- **우아한 대체 동작**: API 키 없이도 로컬 로그만으로 동작
+- **실시간 Statusline**: 현재 모델·reasoning effort, **5h**·**Weekly** 쿼터를 **% left**(Codex `/status`처럼 남은 양)로, 컨텍스트 윈도우 사용량까지 [claude-hud](https://github.com/jarrodwatts/claude-hud) statusline 아래에 표시. 유휴 중에도 리셋 카운트다운 갱신(60초 주기)
+- **두 Codex 경로 모두 지원**: rollout 로그(인터랙티브 TUI)와 `~/.codex/logs_2.sqlite`(**app-server / Claude Code codex 플러그인** 경로, Codex 0.140+) 양쪽에서 rate limit을 읽음 — 전부 로컬, API 키·네트워크 불필요
+- **4개 레이아웃**: expanded / horizontal / inline / compact, 실시간 미리보기로 설정 가능
+- **슬래시 명령어**: setup, configure, usage, costs, summary 등
+- **플랜 무관 동작**: 모든 Codex 플랜(free, Plus, Pro, Team, Enterprise)에서 정상 렌더 — 보고되지 않은 윈도우는 건너뛰며 statusline을 깨뜨리지 않음
+- **npm 런타임 의존성 제로**: Node.js 내장 모듈만 사용 (wrapper는 Bash; app-server 소스는 Node ≥ 22.5 또는 `sqlite3` CLI 필요)
+- **선택적 달러 비용**: OpenAI Admin API 키로 `costs-*` 명령 활성화; 나머지는 키 없이 동작
 
 ## Statusline 통합
 
 [claude-hud](https://github.com/jarrodwatts/claude-hud)와 함께 사용하면 Claude Code statusline 아래에 Codex 레이트 리밋이 추가됩니다:
 
 ```
-[Opus 4.6 (1M context)]              <- claude-hud
+[Opus 4.6 (1M context)]                                  <- claude-hud
 my-project
 Context ██░░░░░░░░ 19%
-Usage   █░░░░░░░░░ 14% (resets in 4h 37m)
-Weekly  ██░░░░░░░░ 22% (resets in 5d 18h)
-── Codex gpt-5.5·medium ──            <- codex-hud
-Usage   █░░░░░░░░░ 1% (resets in 5h)
-Weekly  ░░░░░░░░░░ 0% (resets in 7d)
-Context ██░░░░░░░░ 18% (47k/258k)
-1 session | team
+── Codex gpt-5.5·xhigh ──                                 <- codex-hud
+5h Usage ██████████ 99% left (resets 19:38 · 3h 55m)
+Weekly   ███████░░░ 71% left (resets 15:04 on 22 Jun · 5d 23h)
+Context  ██░░░░░░░░ 18% (47k/258k)
+team
 ```
 
-헤더에는 가장 최근 Codex 턴이 사용한 모델·reasoning effort가, Context 바에는 해당 세션의 컨텍스트 윈도우 점유율이 표시됩니다. Codex가 rate limit 도달을 보고하면 빨간 `⚠ 한도 초과` 경고가 헤더에 나타납니다 (퍼센트 바가 100% 미만이어도 차단되는 경우를 잡아줍니다).
+헤더에는 가장 최근 Codex 턴이 사용한 모델·reasoning effort가 표시됩니다. **5h**·**Weekly** 줄은 쿼터가 **얼마나 남았는지**(바는 남은 양만큼 채움, Codex `/status`와 동일)를 절대 리셋 시각·남은 시간과 함께 보여주고, Context 바는 컨텍스트 점유율(used)을 표시합니다. Codex가 rate limit 도달을 보고하면 빨간 `⚠ 한도 초과` 경고가 헤더에 나타납니다. 리셋 형식과 표시 요소는 `/codex-hud:configure`에서 설정할 수 있습니다.
 
 ## 설치
 
@@ -164,7 +163,7 @@ statusline 통합을 제거하고 이전 statusline을 복원합니다.
 | Reasoning    | 82.4k    |
 | **Total**    | **3.5M** |
 
-Rate limit: 6.0% (5h) / 14.0% (7d) | Plan: team
+Rate limit: 94% left (5h) / 86% left (7d) | Plan: team
 ```
 
 ### `/codex-hud:costs-today` / `costs-week` / `costs-month` *(beta)*
@@ -178,14 +177,15 @@ Rate limit: 6.0% (5h) / 14.0% (7d) | Plan: team
 오늘의 Codex 사용 현황을 한 줄로 요약합니다.
 
 ```
-Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
+Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 99%/100% left
 ```
 
 ## 데이터 소스
 
 | 소스 | 데이터 | 인증 필요 |
 |------|--------|-----------|
-| 로컬 Codex CLI 로그 (`~/.codex/sessions/`) | 토큰 사용량, 레이트 리밋, 세션 수 | 없음 |
+| Rollout 로그 (`~/.codex/sessions/`) | 토큰 사용량, 레이트 리밋, 세션 수, 모델 (인터랙티브 Codex TUI) | 없음 |
+| App-server DB (`~/.codex/logs_2.sqlite`) | app-server / Claude Code codex 플러그인(0.140+) 경로의 레이트 리밋·모델; effort는 `~/.codex/config.toml` | 없음 (Node ≥ 22.5 또는 `sqlite3` CLI) |
 | OpenAI Usage API (`/v1/organization/costs`) | 청구 항목별 달러 비용 | Admin API key |
 | OpenAI Usage API (`/v1/organization/usage/completions`) | 조직 전체 토큰 사용량 | Admin API key |
 
@@ -203,7 +203,7 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
 
 ## 요구사항
 
-- Node.js >= 18.0.0
+- Node.js >= 18.0.0 — 단, `~/.codex/logs_2.sqlite`에서 rate limit을 읽으려면(app-server / Claude Code codex 플러그인 경로) **Node >= 22.5 또는 PATH에 `sqlite3` CLI**가 필요. 구버전 Node도 rollout 기반 사용량은 동작.
 - [Claude Code](https://claude.ai/code)
 - [Codex CLI](https://github.com/openai/codex) 또는 [codex-plugin-cc](https://github.com/openai/codex-plugin-cc)
 - [claude-hud](https://github.com/jarrodwatts/claude-hud) (선택, statusline 통합용)

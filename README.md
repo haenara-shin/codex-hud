@@ -24,31 +24,30 @@ If you use [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) to deleg
 
 ## Features
 
-- **Real-time statusline**: Integrates with [claude-hud](https://github.com/jarrodwatts/claude-hud) to show Codex Usage/Weekly rate limits alongside Claude Code's own statusline, with a 60s refresh so reset countdowns stay current while the session is idle
-- **Slash commands**: Dedicated commands for usage, costs, and summary
-- **Dual data sources**: Local Codex CLI session logs (no API key needed) + OpenAI Usage API (optional, for dollar costs)
-- **Plan-agnostic**: Renders correctly on any Codex plan (free, Plus, Pro, Team, Enterprise) — rate-limit windows that aren't reported are simply skipped, never crash the statusline
-- **Zero npm runtime dependencies**: Only uses Node.js built-in modules (statusline wrapper requires Bash and Perl)
-- **Graceful degradation**: Works with just local logs if no API key is configured
+- **Real-time statusline**: shows your active model + reasoning effort, the **5h** and **Weekly** quota as **% left** (like Codex's own `/status`), and context-window usage below [claude-hud](https://github.com/jarrodwatts/claude-hud)'s statusline — with a 60s refresh so reset countdowns stay current while idle
+- **Works with both Codex paths**: reads rate limits from the rollout logs (interactive TUI) AND from `~/.codex/logs_2.sqlite` (the **app-server / Claude Code codex plugin** path, Codex 0.140+) — all local, no API key, no network
+- **4 layouts**: expanded / horizontal / inline / compact, configurable with live previews
+- **Slash commands**: setup, configure, usage, costs, summary, and more
+- **Plan-agnostic**: renders on any Codex plan (free, Plus, Pro, Team, Enterprise) — unreported rate-limit windows are skipped, never crash the statusline
+- **Zero npm runtime dependencies**: Node.js built-ins only (statusline wrapper uses Bash; the app-server source needs Node ≥ 22.5 or the `sqlite3` CLI)
+- **Optional dollar costs**: OpenAI Admin API key enables the `costs-*` commands; everything else works without it
 
 ## Statusline Integration
 
 When paired with [claude-hud](https://github.com/jarrodwatts/claude-hud), codex-hud adds Codex rate limits below the Claude Code statusline:
 
 ```
-[Opus 4.6 (1M context)]              <- claude-hud
+[Opus 4.6 (1M context)]                                  <- claude-hud
 my-project
 Context ██░░░░░░░░ 19%
-Usage   █░░░░░░░░░ 14% (resets in 4h 37m)
-Weekly  ██░░░░░░░░ 22% (resets in 5d 18h)
-── Codex gpt-5.5·medium ──            <- codex-hud
-Usage   █░░░░░░░░░ 1% (resets in 5h)
-Weekly  ░░░░░░░░░░ 0% (resets in 7d)
-Context ██░░░░░░░░ 18% (47k/258k)
-1 session | team
+── Codex gpt-5.5·xhigh ──                                 <- codex-hud
+5h Usage ██████████ 99% left (resets 19:38 · 3h 55m)
+Weekly   ███████░░░ 71% left (resets 15:04 on 22 Jun · 5d 23h)
+Context  ██░░░░░░░░ 18% (47k/258k)
+team
 ```
 
-The header shows the model and reasoning effort of your most recent Codex turn, and the Context bar tracks that session's context-window occupancy. When Codex reports a reached rate limit, a red `⚠ LIMIT` alert appears in the header (even when the percentage bars sit below 100%).
+The header shows the model and reasoning effort of your most recent Codex turn. The **5h** and **Weekly** rows show how much quota is **left** (bars fill as remaining, matching Codex's `/status`), with both the absolute reset time and the time remaining; the Context bar tracks context-window occupancy (shown as used). When Codex reports a reached rate limit, a red `⚠ LIMIT` alert appears in the header. The reset format (absolute / relative / both) and which elements show are configurable via `/codex-hud:configure`.
 
 ## Installation
 
@@ -165,7 +164,7 @@ Show token usage broken down by metrics.
 | Reasoning    | 82.4k    |
 | **Total**    | **3.5M** |
 
-Rate limit: 6.0% (5h) / 14.0% (7d) | Plan: team
+Rate limit: 94% left (5h) / 86% left (7d) | Plan: team
 ```
 
 ### `/codex-hud:costs-today` / `costs-week` / `costs-month` *(beta)*
@@ -179,14 +178,15 @@ Show cost breakdown by billing line item (requires Admin API key).
 Quick one-line summary of today's Codex activity.
 
 ```
-Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 1%/0%
+Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 99%/100% left
 ```
 
 ## Data Sources
 
 | Source | Data | Auth Required |
 |--------|------|---------------|
-| Local Codex CLI logs (`~/.codex/sessions/`) | Token usage, rate limits, session count | None |
+| Rollout logs (`~/.codex/sessions/`) | Token usage, rate limits, session count, model (interactive Codex TUI) | None |
+| App-server DB (`~/.codex/logs_2.sqlite`) | Rate limits + model when Codex runs via the app-server / Claude Code codex plugin (0.140+); effort from `~/.codex/config.toml` | None (Node ≥ 22.5 or `sqlite3` CLI) |
 | OpenAI Usage API (`/v1/organization/costs`) | Dollar costs by billing line item | Admin API key |
 | OpenAI Usage API (`/v1/organization/usage/completions`) | Org-wide token usage by model | Admin API key |
 
