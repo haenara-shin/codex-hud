@@ -204,7 +204,7 @@ Substitute `codex-hud` with your marketplace alias — `claude-community` for An
 
 ## Requirements
 
-- Node.js >= 18.0.0
+- Node.js >= 18.0.0 — but **Node >= 22.5 (or the `sqlite3` CLI on PATH)** is needed to read rate limits from `~/.codex/logs_2.sqlite` (the source used when you drive Codex via the app-server / Claude Code codex plugin). Older Node still works for rollout-based usage.
 - [Claude Code](https://claude.ai/code)
 - [Codex CLI](https://github.com/openai/codex) or [codex-plugin-cc](https://github.com/openai/codex-plugin-cc)
 - [claude-hud](https://github.com/jarrodwatts/claude-hud) (optional, for statusline integration)
@@ -215,6 +215,14 @@ Substitute `codex-hud` with your marketplace alias — `claude-community` for An
 codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud) — which solved the same usage-visibility problem for Claude Code itself. codex-hud extends that idea to OpenAI Codex and integrates with claude-hud via the included wrapper script when both are installed.
 
 ## Changelog
+
+### v0.9.0
+
+- **Works with the app-server / Codex plugin path.** Codex 0.140+ run via the app-server (e.g. the Claude Code codex plugin) doesn't write rate limits to the rollout logs — it logs them to `~/.codex/logs_2.sqlite`. codex-hud now reads the newest snapshot from there (local, no network/auth), merged with rollout data by freshness. This fixes "No Codex sessions found" for users who only use Codex through the plugin.
+- **Reasoning effort** in the model badge (e.g. `gpt-5.5·xhigh`), read from `~/.codex/config.toml`.
+- **`5h Usage` label** for the primary window (derived from its duration), matching Codex's own `/status`.
+- **Quota shown as "% left"** with bars that fill as remaining — e.g. `5h Usage ██████████ 99% left (resets 19:38 · 3h 58m)` — matching Codex `/status`. (The Context bar still shows used%.)
+- Requires Node >= 22.5 or the `sqlite3` CLI for the new app-server source; degrades gracefully otherwise.
 
 ### v0.8.0
 

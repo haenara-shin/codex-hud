@@ -9,6 +9,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
+import { readDbTelemetry } from "./codex-db.js";
 import type {
   DateRange,
   ParsedSession,
@@ -293,6 +294,22 @@ export function aggregateLocalUsage(range: DateRange): AggregatedUsage {
   if (range === "today") {
     for (const file of listLogs(dayDir(1))) {
       considerTelemetry(parseSessionLog(file));
+    }
+  }
+
+  // Codex 0.140+ run via the app-server (the Claude Code codex plugin) doesn't
+  // write rate limits to rollout files — it logs them to ~/.codex/logs_2.sqlite.
+  // Merge that snapshot in if it's fresher than anything from the rollouts.
+  const db = readDbTelemetry();
+  if (db) {
+    if (db.timestampMs > latestRlTimestamp) {
+      latestRateLimits = db.rateLimits;
+      latestRlTimestamp = db.timestampMs;
+    }
+    if (db.model && db.timestampMs > latestModelTimestamp) {
+      // Model from the log; effort from the Codex config (config.toml).
+      latestModel = { model: db.model, effort: db.effort };
+      latestModelTimestamp = db.timestampMs;
     }
   }
 

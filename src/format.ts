@@ -29,20 +29,20 @@ export function formatTokenUsage(usage: TokenUsage): string {
 export function formatRateLimits(rl: RateLimits): string {
   const parts: string[] = [];
   if (rl.primary) {
-    const pct = `${rl.primary.used_percent.toFixed(1)}%`;
+    const left = `${(100 - rl.primary.used_percent).toFixed(0)}% left`;
     const win =
       rl.primary.window_minutes != null
         ? ` (${Math.round(rl.primary.window_minutes / 60)}h)`
         : "";
-    parts.push(`${pct}${win}`);
+    parts.push(`${left}${win}`);
   }
   if (rl.secondary) {
-    const pct = `${rl.secondary.used_percent.toFixed(1)}%`;
+    const left = `${(100 - rl.secondary.used_percent).toFixed(0)}% left`;
     const win =
       rl.secondary.window_minutes != null
         ? ` (${Math.round(rl.secondary.window_minutes / 60 / 24)}d)`
         : "";
-    parts.push(`${pct}${win}`);
+    parts.push(`${left}${win}`);
   }
   const planPart = rl.plan_type ? ` | Plan: ${rl.plan_type}` : "";
   if (parts.length === 0) return `Rate limit: n/a${planPart}`;
@@ -135,11 +135,11 @@ export function formatSummaryLine(opts: {
   parts.push(`${opts.sessionCount} session${opts.sessionCount !== 1 ? "s" : ""}`);
 
   if (opts.rateLimits?.primary && opts.rateLimits.secondary) {
-    const p = opts.rateLimits.primary.used_percent.toFixed(0);
-    const s = opts.rateLimits.secondary.used_percent.toFixed(0);
-    parts.push(`Rate: ${p}%/${s}%`);
+    const p = (100 - opts.rateLimits.primary.used_percent).toFixed(0);
+    const s = (100 - opts.rateLimits.secondary.used_percent).toFixed(0);
+    parts.push(`Rate: ${p}%/${s}% left`);
   } else if (opts.rateLimits?.primary) {
-    parts.push(`Rate: ${opts.rateLimits.primary.used_percent.toFixed(0)}%`);
+    parts.push(`Rate: ${(100 - opts.rateLimits.primary.used_percent).toFixed(0)}% left`);
   }
 
   return `Codex today: ${parts.join(" | ")}`;

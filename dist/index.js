@@ -179,13 +179,17 @@ async function handleUsage(args) {
         console.log(`### Local Sessions (${local.sessionCount} sessions)\n`);
         console.log(formatTokenUsage(local.totals));
         console.log("");
-        if (local.latestRateLimits) {
-            console.log(formatRateLimits(local.latestRateLimits));
-            console.log("");
-        }
     }
     else {
         console.log("No local Codex sessions found for this period.\n");
+    }
+    // Rate limits can come from rollout logs OR ~/.codex/logs_2.sqlite (the
+    // app-server path), so show them even with zero rollout sessions.
+    if (local.latestRateLimits) {
+        if (local.latestModel)
+            console.log(`Model: **${local.latestModel.model}**\n`);
+        console.log(formatRateLimits(local.latestRateLimits));
+        console.log("");
     }
     // API usage
     if (!localOnly) {

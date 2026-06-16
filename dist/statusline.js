@@ -21,6 +21,7 @@ const I18N = {
         noData: "No Codex sessions found",
         resetsIn: "resets in",
         resets: "resets",
+        left: " left",
         on: "on",
         months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
         limit: "LIMIT",
@@ -36,6 +37,7 @@ const I18N = {
         noData: "Codex 세션 없음",
         resetsIn: "리셋까지",
         resets: "리셋",
+        left: " 남음",
         on: "",
         months: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"],
         limit: "한도 초과",
@@ -49,12 +51,20 @@ function getQuotaColor(percent) {
         return BRIGHT_MAGENTA;
     return BRIGHT_BLUE;
 }
-function quotaBar(percent, width) {
-    const safePercent = Math.min(100, Math.max(0, percent));
-    const filled = Math.round((safePercent / 100) * width);
-    const empty = width - filled;
-    const color = getQuotaColor(safePercent);
-    return `${color}${"█".repeat(filled)}${DIM}${"░".repeat(empty)}${RESET}`;
+// Fills `fillPercent` of the bar. Rate-limit bars pass the REMAINING fraction
+// (so a near-full bar = lots left, like Codex /status) plus an explicit color
+// computed from severity; the Context bar passes used% and lets the bar color
+// itself (high used = bad).
+function quotaBar(fillPercent, width, color) {
+    const safe = Math.min(100, Math.max(0, fillPercent));
+    const filled = Math.round((safe / 100) * width);
+    const c = color ?? getQuotaColor(safe);
+    return `${c}${"█".repeat(filled)}${DIM}${"░".repeat(width - filled)}${RESET}`;
+}
+// Color for a rate-limit window by how much is LEFT (low remaining = bad).
+// Equivalent to getQuotaColor(used) since used = 100 - remaining.
+function limitColor(usedPercent) {
+    return getQuotaColor(usedPercent);
 }
 function formatResetTime(resetsAt) {
     if (resetsAt == null)
@@ -129,6 +139,19 @@ function headerBadges(data, cfg, t) {
 function contextPercent(context) {
     return Math.min(100, (context.used / context.window) * 100);
 }
+// Primary window label derived from its duration: 300min -> "5h Usage"
+// (the 5h window, like Codex's own /status). Falls back to "Usage".
+function primaryLabel(window, t) {
+    const m = window?.window_minutes;
+    if (typeof m === "number" && m > 0 && m < 1440)
+        return `${Math.round(m / 60)}h ${t.usage}`;
+    return t.usage;
+}
+// Pad a label so the bars in the expanded layout stay column-aligned
+// regardless of label length ("5h Usage" vs "Weekly" vs "Context").
+function padLabel(label) {
+    return label.length >= 8 ? label : label.padEnd(8);
+}
 // ── Expanded layout (multi-line with bars) ──
 function renderExpanded(data, cfg) {
     const lines = [];
@@ -142,20 +165,21 @@ function renderExpanded(data, cfg) {
     }
     if (rateLimits) {
         if (cfg.showUsage && rateLimits.primary) {
-            const p = rateLimits.primary.used_percent;
-            const color = getQuotaColor(p);
-            const bar = quotaBar(p, cfg.barWidth);
+            const remaining = 100 - rateLimits.primary.used_percent;
+            const color = limitColor(rateLimits.primary.used_percent);
+            const bar = quotaBar(remaining, cfg.barWidth, color);
             const reset = resetText(rateLimits.primary.resets_at, cfg, t, true);
             const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
-            lines.push(`${DIM}${t.usage}${RESET}   ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+            const label = padLabel(primaryLabel(rateLimits.primary, t));
+            lines.push(`${DIM}${label}${RESET} ${bar} ${color}${remaining.toFixed(0)}%${t.left}${RESET}${resetPart}`);
         }
         if (cfg.showWeekly && rateLimits.secondary) {
-            const p = rateLimits.secondary.used_percent;
-            const color = getQuotaColor(p);
-            const bar = quotaBar(p, cfg.barWidth);
+            const remaining = 100 - rateLimits.secondary.used_percent;
+            const color = limitColor(rateLimits.secondary.used_percent);
+            const bar = quotaBar(remaining, cfg.barWidth, color);
             const reset = resetText(rateLimits.secondary.resets_at, cfg, t, true);
             const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
-            lines.push(`${DIM}${t.weekly}${RESET}  ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+            lines.push(`${DIM}${padLabel(t.weekly)}${RESET} ${bar} ${color}${remaining.toFixed(0)}%${t.left}${RESET}${resetPart}`);
         }
     }
     if (cfg.showContext && data.context) {
@@ -163,12 +187,18 @@ function renderExpanded(data, cfg) {
         const color = getQuotaColor(p);
         const bar = quotaBar(p, cfg.barWidth);
         const detail = `${DIM}(${formatNumber(data.context.used)}/${formatNumber(data.context.window)})${RESET}`;
-        lines.push(`${DIM}${t.context}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET} ${detail}`);
+        lines.push(`${DIM}${padLabel(t.context)}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET} ${detail}`);
     }
-    if (cfg.showFooter && sessionCount > 0) {
-        const label = sessionCount === 1 ? t.sessions : t.sessionsPlural;
-        const planPart = cfg.showPlan && plan ? ` | ${plan}` : "";
-        lines.push(`${DIM}${sessionCount} ${label}${planPart}${RESET}`);
+    if (cfg.showFooter) {
+        if (sessionCount > 0) {
+            const label = sessionCount === 1 ? t.sessions : t.sessionsPlural;
+            const planPart = cfg.showPlan && plan ? ` | ${plan}` : "";
+            lines.push(`${DIM}${sessionCount} ${label}${planPart}${RESET}`);
+        }
+        else if (cfg.showPlan && plan) {
+            // app-server-only usage: no rollout sessions, but show the plan.
+            lines.push(`${DIM}${plan}${RESET}`);
+        }
     }
     return lines;
 }
@@ -186,20 +216,20 @@ function renderInline(data, cfg) {
         return [parts.join(` ${DIM}│${RESET} `)];
     }
     if (rateLimits && cfg.showUsage && rateLimits.primary) {
-        const p = rateLimits.primary.used_percent;
-        const color = getQuotaColor(p);
-        const bar = quotaBar(p, cfg.barWidth);
+        const remaining = 100 - rateLimits.primary.used_percent;
+        const color = limitColor(rateLimits.primary.used_percent);
+        const bar = quotaBar(remaining, cfg.barWidth, color);
         const reset = resetText(rateLimits.primary.resets_at, cfg, t, false);
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
-        parts.push(`${DIM}${t.usage}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+        parts.push(`${DIM}${primaryLabel(rateLimits.primary, t)}${RESET} ${bar} ${color}${remaining.toFixed(0)}%${t.left}${RESET}${resetPart}`);
     }
     if (rateLimits && cfg.showWeekly && rateLimits.secondary) {
-        const p = rateLimits.secondary.used_percent;
-        const color = getQuotaColor(p);
-        const bar = quotaBar(p, cfg.barWidth);
+        const remaining = 100 - rateLimits.secondary.used_percent;
+        const color = limitColor(rateLimits.secondary.used_percent);
+        const bar = quotaBar(remaining, cfg.barWidth, color);
         const reset = resetText(rateLimits.secondary.resets_at, cfg, t, false);
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
-        parts.push(`${DIM}${t.weekly}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+        parts.push(`${DIM}${t.weekly}${RESET} ${bar} ${color}${remaining.toFixed(0)}%${t.left}${RESET}${resetPart}`);
     }
     if (cfg.showContext && data.context) {
         const p = contextPercent(data.context);
@@ -226,20 +256,20 @@ function renderHorizontal(data, cfg) {
     // Metrics on a single line, separated by │
     const metricParts = [];
     if (rateLimits && cfg.showUsage && rateLimits.primary) {
-        const p = rateLimits.primary.used_percent;
-        const color = getQuotaColor(p);
-        const bar = quotaBar(p, cfg.barWidth);
+        const remaining = 100 - rateLimits.primary.used_percent;
+        const color = limitColor(rateLimits.primary.used_percent);
+        const bar = quotaBar(remaining, cfg.barWidth, color);
         const reset = resetText(rateLimits.primary.resets_at, cfg, t, false);
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
-        metricParts.push(`${DIM}${t.usage}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+        metricParts.push(`${DIM}${primaryLabel(rateLimits.primary, t)}${RESET} ${bar} ${color}${remaining.toFixed(0)}%${t.left}${RESET}${resetPart}`);
     }
     if (rateLimits && cfg.showWeekly && rateLimits.secondary) {
-        const p = rateLimits.secondary.used_percent;
-        const color = getQuotaColor(p);
-        const bar = quotaBar(p, cfg.barWidth);
+        const remaining = 100 - rateLimits.secondary.used_percent;
+        const color = limitColor(rateLimits.secondary.used_percent);
+        const bar = quotaBar(remaining, cfg.barWidth, color);
         const reset = resetText(rateLimits.secondary.resets_at, cfg, t, false);
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
-        metricParts.push(`${DIM}${t.weekly}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+        metricParts.push(`${DIM}${t.weekly}${RESET} ${bar} ${color}${remaining.toFixed(0)}%${t.left}${RESET}${resetPart}`);
     }
     if (cfg.showContext && data.context) {
         const p = contextPercent(data.context);
@@ -250,10 +280,16 @@ function renderHorizontal(data, cfg) {
     if (metricParts.length > 0) {
         lines.push(metricParts.join(` ${DIM}│${RESET}  `));
     }
-    if (cfg.showFooter && sessionCount > 0) {
-        const label = sessionCount === 1 ? t.sessions : t.sessionsPlural;
-        const planPart = cfg.showPlan && plan ? ` | ${plan}` : "";
-        lines.push(`${DIM}${sessionCount} ${label}${planPart}${RESET}`);
+    if (cfg.showFooter) {
+        if (sessionCount > 0) {
+            const label = sessionCount === 1 ? t.sessions : t.sessionsPlural;
+            const planPart = cfg.showPlan && plan ? ` | ${plan}` : "";
+            lines.push(`${DIM}${sessionCount} ${label}${planPart}${RESET}`);
+        }
+        else if (cfg.showPlan && plan) {
+            // app-server-only usage: no rollout sessions, but show the plan.
+            lines.push(`${DIM}${plan}${RESET}`);
+        }
     }
     return lines;
 }
@@ -272,18 +308,18 @@ function renderCompact(data, cfg) {
     }
     if (rateLimits) {
         if (cfg.showUsage && rateLimits.primary) {
-            const p = rateLimits.primary.used_percent;
-            const color = getQuotaColor(p);
+            const remaining = 100 - rateLimits.primary.used_percent;
+            const color = limitColor(rateLimits.primary.used_percent);
             const reset = resetText(rateLimits.primary.resets_at, cfg, t, false);
             const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
-            parts.push(`${DIM}${t.usage}${RESET} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+            parts.push(`${DIM}${primaryLabel(rateLimits.primary, t)}${RESET} ${color}${remaining.toFixed(0)}%${t.left}${RESET}${resetPart}`);
         }
         if (cfg.showWeekly && rateLimits.secondary) {
-            const p = rateLimits.secondary.used_percent;
-            const color = getQuotaColor(p);
+            const remaining = 100 - rateLimits.secondary.used_percent;
+            const color = limitColor(rateLimits.secondary.used_percent);
             const reset = resetText(rateLimits.secondary.resets_at, cfg, t, false);
             const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
-            parts.push(`${DIM}${t.weekly}${RESET} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
+            parts.push(`${DIM}${t.weekly}${RESET} ${color}${remaining.toFixed(0)}%${t.left}${RESET}${resetPart}`);
         }
     }
     if (cfg.showContext && data.context) {

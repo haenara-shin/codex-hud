@@ -29,7 +29,8 @@ node dist/index.js summary            # One-line summary
 
 ## Data Sources
 
-- **Local logs**: `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` (no API key needed)
+- **Local rollout logs**: `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` (no API key needed) — usage + rate limits from the interactive Codex TUI.
+- **Local app-server DB**: `~/.codex/logs_2.sqlite` (`codex.rate_limits` events) — rate limits + model when Codex runs via the app-server / Claude Code codex plugin (Codex 0.140+). Read via node:sqlite (Node 22.5+) or the sqlite3 CLI. Effort comes from `~/.codex/config.toml`.
 - **OpenAI API**: `/v1/organization/costs` and `/v1/organization/usage/completions` (needs Admin API key)
 
 ## API Key
