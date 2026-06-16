@@ -216,6 +216,10 @@ codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud
 
 ## Changelog
 
+### v0.8.0
+
+- **Absolute reset times** (like Codex's own `/status`). Reset hints now show the clock time a window resets — `resets 19:38`, or `resets 15:04 on 22 Jun` once it's past today — alongside the time remaining: `(resets 19:38 · 4h 37m)`. New `resetStyle` option (`both` (default) / `absolute` / `relative`), localized for ko (`리셋 19:38 · 4h 37m`). Configurable via `/codex-hud:configure` with live previews.
+
 ### v0.7.0
 
 - **Live previews in `/codex-hud:configure`.** When choosing a layout, each option now shows a side-by-side preview of how your statusline will actually look — rendered by the real statusline code (sample data, with your current toggles applied), so the preview can never drift from the result. Adds a `preview` CLI subcommand (`node dist/index.js preview --set layout=compact`) that emits plain, color-free output for the question UI.

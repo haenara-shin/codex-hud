@@ -7,6 +7,7 @@ export const DEFAULT_DISPLAY = {
     showWeekly: true,
     showModel: true,
     showContext: true,
+    resetStyle: "both",
     barWidth: 10,
     fallbackToWeek: true,
     language: "en",

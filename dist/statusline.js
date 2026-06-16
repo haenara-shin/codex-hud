@@ -20,6 +20,9 @@ const I18N = {
         sessionsShort: "s",
         noData: "No Codex sessions found",
         resetsIn: "resets in",
+        resets: "resets",
+        on: "on",
+        months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
         limit: "LIMIT",
     },
     ko: {
@@ -32,6 +35,9 @@ const I18N = {
         sessionsShort: " 세션",
         noData: "Codex 세션 없음",
         resetsIn: "리셋까지",
+        resets: "리셋",
+        on: "",
+        months: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"],
         limit: "한도 초과",
     },
 };
@@ -71,6 +77,43 @@ function formatResetTime(resetsAt) {
     }
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
+function sameLocalDay(a, b) {
+    return (a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate());
+}
+// Absolute reset clock in the user's local time: "19:38", or "15:04 on 22 Jun"
+// (en) / "15:04 6월 22일" (ko) once the reset is past today.
+function formatResetAbsolute(resetsAt, t) {
+    const d = new Date(resetsAt * 1000);
+    const clock = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    if (sameLocalDay(d, new Date()))
+        return clock;
+    const month = t.months[d.getMonth()];
+    // en: "15:04 on 22 Jun" — ko: "15:04 6월 22일"
+    return t.on
+        ? `${clock} ${t.on} ${d.getDate()} ${month}`
+        : `${clock} ${month} ${d.getDate()}일`;
+}
+// Inner text for the "(...)" reset hint, honoring cfg.resetStyle.
+// verbose=true (expanded layout) prefixes the "resets" word.
+function resetText(resetsAt, cfg, t, verbose) {
+    if (resetsAt == null)
+        return "";
+    const rel = formatResetTime(resetsAt); // "" once the window has reset
+    const abs = formatResetAbsolute(resetsAt, t);
+    if (cfg.resetStyle === "relative") {
+        if (!rel)
+            return "";
+        return verbose ? `${t.resetsIn} ${rel}` : rel;
+    }
+    if (cfg.resetStyle === "absolute") {
+        return verbose ? `${t.resets} ${abs}` : abs;
+    }
+    // both
+    const core = rel ? `${abs} · ${rel}` : abs;
+    return verbose ? `${t.resets} ${core}` : core;
+}
 // `── Codex gpt-5.5·medium ⚠ LIMIT ──` — model badge + limit alert.
 function headerBadges(data, cfg, t) {
     let badges = "";
@@ -102,16 +145,16 @@ function renderExpanded(data, cfg) {
             const p = rateLimits.primary.used_percent;
             const color = getQuotaColor(p);
             const bar = quotaBar(p, cfg.barWidth);
-            const reset = formatResetTime(rateLimits.primary.resets_at);
-            const resetPart = reset ? ` ${DIM}(${t.resetsIn} ${reset})${RESET}` : "";
+            const reset = resetText(rateLimits.primary.resets_at, cfg, t, true);
+            const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
             lines.push(`${DIM}${t.usage}${RESET}   ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
         }
         if (cfg.showWeekly && rateLimits.secondary) {
             const p = rateLimits.secondary.used_percent;
             const color = getQuotaColor(p);
             const bar = quotaBar(p, cfg.barWidth);
-            const reset = formatResetTime(rateLimits.secondary.resets_at);
-            const resetPart = reset ? ` ${DIM}(${t.resetsIn} ${reset})${RESET}` : "";
+            const reset = resetText(rateLimits.secondary.resets_at, cfg, t, true);
+            const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
             lines.push(`${DIM}${t.weekly}${RESET}  ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
         }
     }
@@ -146,7 +189,7 @@ function renderInline(data, cfg) {
         const p = rateLimits.primary.used_percent;
         const color = getQuotaColor(p);
         const bar = quotaBar(p, cfg.barWidth);
-        const reset = formatResetTime(rateLimits.primary.resets_at);
+        const reset = resetText(rateLimits.primary.resets_at, cfg, t, false);
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
         parts.push(`${DIM}${t.usage}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
     }
@@ -154,7 +197,7 @@ function renderInline(data, cfg) {
         const p = rateLimits.secondary.used_percent;
         const color = getQuotaColor(p);
         const bar = quotaBar(p, cfg.barWidth);
-        const reset = formatResetTime(rateLimits.secondary.resets_at);
+        const reset = resetText(rateLimits.secondary.resets_at, cfg, t, false);
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
         parts.push(`${DIM}${t.weekly}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
     }
@@ -186,7 +229,7 @@ function renderHorizontal(data, cfg) {
         const p = rateLimits.primary.used_percent;
         const color = getQuotaColor(p);
         const bar = quotaBar(p, cfg.barWidth);
-        const reset = formatResetTime(rateLimits.primary.resets_at);
+        const reset = resetText(rateLimits.primary.resets_at, cfg, t, false);
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
         metricParts.push(`${DIM}${t.usage}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
     }
@@ -194,7 +237,7 @@ function renderHorizontal(data, cfg) {
         const p = rateLimits.secondary.used_percent;
         const color = getQuotaColor(p);
         const bar = quotaBar(p, cfg.barWidth);
-        const reset = formatResetTime(rateLimits.secondary.resets_at);
+        const reset = resetText(rateLimits.secondary.resets_at, cfg, t, false);
         const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
         metricParts.push(`${DIM}${t.weekly}${RESET} ${bar} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
     }
@@ -231,14 +274,14 @@ function renderCompact(data, cfg) {
         if (cfg.showUsage && rateLimits.primary) {
             const p = rateLimits.primary.used_percent;
             const color = getQuotaColor(p);
-            const reset = formatResetTime(rateLimits.primary.resets_at);
+            const reset = resetText(rateLimits.primary.resets_at, cfg, t, false);
             const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
             parts.push(`${DIM}${t.usage}${RESET} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
         }
         if (cfg.showWeekly && rateLimits.secondary) {
             const p = rateLimits.secondary.used_percent;
             const color = getQuotaColor(p);
-            const reset = formatResetTime(rateLimits.secondary.resets_at);
+            const reset = resetText(rateLimits.secondary.resets_at, cfg, t, false);
             const resetPart = reset ? ` ${DIM}(${reset})${RESET}` : "";
             parts.push(`${DIM}${t.weekly}${RESET} ${color}${p.toFixed(0)}%${RESET}${resetPart}`);
         }

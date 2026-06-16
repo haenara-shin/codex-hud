@@ -16,6 +16,7 @@ const BOOL_KEYS: DisplayKey[] = [
 const NUMBER_KEYS: DisplayKey[] = ["barWidth"];
 const ENUM_KEYS: Record<string, readonly string[]> = {
   layout: ["compact", "expanded", "horizontal", "inline"],
+  resetStyle: ["relative", "absolute", "both"],
   language: ["en", "ko"],
 };
 
@@ -46,6 +47,7 @@ export function showConfig(asJson = false): string {
     `  showWeekly     = ${cfg.showWeekly}`,
     `  showModel      = ${cfg.showModel}`,
     `  showContext    = ${cfg.showContext}`,
+    `  resetStyle     = ${cfg.resetStyle}  (relative | absolute | both)`,
     `  barWidth       = ${cfg.barWidth}`,
     `  fallbackToWeek = ${cfg.fallbackToWeek}`,
     `  language       = ${cfg.language}  (en | ko)`,

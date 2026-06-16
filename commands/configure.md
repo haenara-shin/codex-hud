@@ -14,7 +14,7 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" configure --get --json
 Parse the JSON to determine current values. If `_configured` is `true`, use **Flow B (existing user)**. Otherwise use **Flow A (new user)**.
 
 Defaults:
-- `layout: "expanded"`, `showPlan: true`, `showFooter: true`, `showUsage: true`, `showWeekly: true`, `showModel: true`, `showContext: true`, `barWidth: 10`, `fallbackToWeek: true`, `language: "en"`
+- `layout: "expanded"`, `showPlan: true`, `showFooter: true`, `showUsage: true`, `showWeekly: true`, `showModel: true`, `showContext: true`, `resetStyle: "both"`, `barWidth: 10`, `fallbackToWeek: true`, `language: "en"`
 
 ## Always On (not configurable)
 - Codex header badge (`── Codex ──`)
@@ -41,7 +41,9 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" preview --set <key>=<value> [--set <k
 
 ---
 
-## Flow A: New User (4 Questions)
+## Flow A: New User
+
+Ask the questions below. `AskUserQuestion` allows at most 4 questions per call, so split into two rounds (e.g. Layout+Preset+Reset+Language, then Bar width) — or skip the ones the user clearly doesn't care about.
 
 ### Q1: Layout
 - header: "Layout"
@@ -65,7 +67,17 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" preview --set <key>=<value> [--set <k
   - "Usage only" — Only the 5h Usage bar
   - "Minimal" — Plan badge only (hides bars and footer)
 
-### Q3: Language
+### Q3: Reset time format (single-select → previews supported)
+- header: "Reset time"
+- question: "How should reset times show?"
+- multiSelect: false
+- Generate a `preview` per option: `preview --set resetStyle=both`, `=absolute`, `=relative` (plus the layout being used). Attach each.
+- options (each WITH its preview):
+  - "Both (Recommended)" — `resets 19:38 · 4h 37m` (absolute clock + time left, like Codex `/status`)
+  - "Absolute" — `resets 19:38` / `resets 15:04 on 22 Jun` (clock only)
+  - "Relative" — `resets in 4h 37m` (time left only)
+
+### Q4: Language
 - header: "Language"
 - question: "Choose UI language for labels:"
 - multiSelect: false
@@ -73,7 +85,7 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" preview --set <key>=<value> [--set <k
   - "English (Recommended)" — `Usage`, `Weekly`, `resets in ...`
   - "한국어" — `Usage`, `Weekly`, `리셋까지 ...`
 
-### Q4: Bar width (optional)
+### Q5: Bar width (optional)
 - header: "Bar width"
 - question: "Progress bar width (characters)?"
 - multiSelect: false
@@ -84,9 +96,9 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/index.js" preview --set <key>=<value> [--set <k
 
 ---
 
-## Flow B: Existing User (4 Questions)
+## Flow B: Existing User
 
-Build questions based on current values. Show current value in the question text.
+Build questions based on current values. Show current value in the question text. Skip any question the user clearly doesn't need; `AskUserQuestion` allows 4 per call, so split into rounds if you ask more.
 
 ### Q1: Layout
 - header: "Layout"
@@ -122,6 +134,14 @@ If nothing is ON, say "Nothing to disable" and skip.
 - options: **only items currently OFF** from the same list.
 
 If nothing is OFF, say "Nothing to enable — everything is already on" and skip.
+
+### Q3b: Reset time format (optional, single-select → previews supported)
+Ask only if the user wants to change how reset times show (current: {currentResetStyle}).
+- header: "Reset time"
+- question: "Reset time format (current: {currentResetStyle})?"
+- multiSelect: false
+- Generate a `preview` per option with the user's current layout: `preview --set resetStyle=both`, `=absolute`, `=relative`. Attach each.
+- options (each WITH its preview): "Both" (`resets 19:38 · 4h 37m`, like Codex `/status`) / "Absolute" (`resets 19:38`) / "Relative" (`resets in 4h 37m`)
 
 ### Q4: Language / Reset
 - header: "Language/Reset"
@@ -159,6 +179,7 @@ Layout always comes from Q1; presets only set the visibility flags below.
 | Weekly bar (7d) | `showWeekly` | `true` / `false` |
 | Model badge | `showModel` | `true` / `false` |
 | Context bar | `showContext` | `true` / `false` |
+| Reset time format | `resetStyle` | `relative` / `absolute` / `both` |
 | Fallback to week | `fallbackToWeek` | `true` / `false` |
 | Bar width | `barWidth` | `1–40` |
 | Language | `language` | `en` / `ko` |

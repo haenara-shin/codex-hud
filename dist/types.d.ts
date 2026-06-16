@@ -6,6 +6,9 @@ export interface DisplayConfig {
     showWeekly?: boolean;
     showModel?: boolean;
     showContext?: boolean;
+    /** How reset times render: relative ("in 4h 37m"), absolute ("resets 19:38"),
+     *  or both ("resets 19:38 · 4h 37m"). */
+    resetStyle?: "relative" | "absolute" | "both";
     barWidth?: number;
     fallbackToWeek?: boolean;
     language?: "en" | "ko";
