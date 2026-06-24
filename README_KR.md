@@ -25,11 +25,11 @@
 ## 주요 기능
 
 - **실시간 Statusline**: 현재 모델·reasoning effort, **5h**·**Weekly** 쿼터를 **% left**(Codex `/status`처럼 남은 양)로, 컨텍스트 윈도우 사용량까지 [claude-hud](https://github.com/jarrodwatts/claude-hud) statusline 아래에 표시. 유휴 중에도 리셋 카운트다운 갱신(60초 주기)
-- **두 Codex 경로 모두 지원**: rollout 로그(인터랙티브 TUI)와 `~/.codex/logs_2.sqlite`(**app-server / Claude Code codex 플러그인** 경로, Codex 0.140+) 양쪽에서 rate limit을 읽음 — 전부 로컬, API 키·네트워크 불필요
+- **모든 Codex 경로·버전 지원**: rollout 로그(인터랙티브 TUI), `~/.codex/logs_2.sqlite`(app-server, Codex 0.140–0.141), `codex app-server` RPC(Codex 0.142+, 디스크에 안 남김) 중 가장 신선한 것에서 rate limit을 읽음 — 전부 로컬, API 키·네트워크 불필요
 - **4개 레이아웃**: expanded / horizontal / inline / compact, 실시간 미리보기로 설정 가능
 - **슬래시 명령어**: setup, configure, usage, costs, summary 등
 - **플랜 무관 동작**: 모든 Codex 플랜(free, Plus, Pro, Team, Enterprise)에서 정상 렌더 — 보고되지 않은 윈도우는 건너뛰며 statusline을 깨뜨리지 않음
-- **npm 런타임 의존성 제로**: Node.js 내장 모듈만 사용 (wrapper는 Bash; app-server 소스는 Node ≥ 22.5 또는 `sqlite3` CLI 필요)
+- **npm 런타임 의존성 제로**: Node.js 내장 모듈만 사용 (wrapper는 Bash; 0.140–0.141 DB 소스는 Node ≥ 22.5 또는 `sqlite3` CLI; 0.142+ 소스는 PATH에 `codex` CLI 필요)
 - **선택적 달러 비용**: OpenAI Admin API 키로 `costs-*` 명령 활성화; 나머지는 키 없이 동작
 
 ## Statusline 통합
@@ -204,7 +204,7 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 99%/100% lef
 
 ## 요구사항
 
-- Node.js >= 18.0.0 — 단, `~/.codex/logs_2.sqlite`에서 rate limit을 읽으려면(app-server / Claude Code codex 플러그인 경로) **Node >= 22.5 또는 PATH에 `sqlite3` CLI**가 필요. 구버전 Node도 rollout 기반 사용량은 동작.
+- Node.js >= 18.0.0. app-server rate limit의 경우: Codex **0.142+**는 PATH의 `codex` CLI로 읽고, Codex **0.140–0.141**은 `~/.codex/logs_2.sqlite`를 읽기 위해 **Node >= 22.5 또는 `sqlite3` CLI** 필요. 구버전 Node도 rollout 기반 사용량은 동작.
 - [Claude Code](https://claude.ai/code)
 - [Codex CLI](https://github.com/openai/codex) 또는 [codex-plugin-cc](https://github.com/openai/codex-plugin-cc)
 - [claude-hud](https://github.com/jarrodwatts/claude-hud) (선택, statusline 통합용)

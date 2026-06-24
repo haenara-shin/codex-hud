@@ -25,11 +25,11 @@ If you use [codex-plugin-cc](https://github.com/openai/codex-plugin-cc) to deleg
 ## Features
 
 - **Real-time statusline**: shows your active model + reasoning effort, the **5h** and **Weekly** quota as **% left** (like Codex's own `/status`), and context-window usage below [claude-hud](https://github.com/jarrodwatts/claude-hud)'s statusline — with a 60s refresh so reset countdowns stay current while idle
-- **Works with both Codex paths**: reads rate limits from the rollout logs (interactive TUI) AND from `~/.codex/logs_2.sqlite` (the **app-server / Claude Code codex plugin** path, Codex 0.140+) — all local, no API key, no network
+- **Works across every Codex path & version**: reads rate limits from the rollout logs (interactive TUI), `~/.codex/logs_2.sqlite` (app-server, Codex 0.140–0.141), and the `codex app-server` RPC (Codex 0.142+, which writes nothing to disk) — newest-wins, all local, no API key, no network
 - **4 layouts**: expanded / horizontal / inline / compact, configurable with live previews
 - **Slash commands**: setup, configure, usage, costs, summary, and more
 - **Plan-agnostic**: renders on any Codex plan (free, Plus, Pro, Team, Enterprise) — unreported rate-limit windows are skipped, never crash the statusline
-- **Zero npm runtime dependencies**: Node.js built-ins only (statusline wrapper uses Bash; the app-server source needs Node ≥ 22.5 or the `sqlite3` CLI)
+- **Zero npm runtime dependencies**: Node.js built-ins only (statusline wrapper uses Bash; the 0.140–0.141 DB source needs Node ≥ 22.5 or the `sqlite3` CLI; the 0.142+ source needs the `codex` CLI on PATH)
 - **Optional dollar costs**: OpenAI Admin API key enables the `costs-*` commands; everything else works without it
 
 ## Statusline Integration
@@ -205,7 +205,7 @@ Substitute `codex-hud` with your marketplace alias — `claude-community` for An
 
 ## Requirements
 
-- Node.js >= 18.0.0 — but **Node >= 22.5 (or the `sqlite3` CLI on PATH)** is needed to read rate limits from `~/.codex/logs_2.sqlite` (the source used when you drive Codex via the app-server / Claude Code codex plugin). Older Node still works for rollout-based usage.
+- Node.js >= 18.0.0. For app-server rate limits: Codex **0.142+** reads them via the `codex` CLI on PATH; Codex **0.140–0.141** needs **Node >= 22.5 (or the `sqlite3` CLI)** to read `~/.codex/logs_2.sqlite`. Older Node still works for rollout-based usage.
 - [Claude Code](https://claude.ai/code)
 - [Codex CLI](https://github.com/openai/codex) or [codex-plugin-cc](https://github.com/openai/codex-plugin-cc)
 - [claude-hud](https://github.com/jarrodwatts/claude-hud) (optional, for statusline integration)
