@@ -186,7 +186,8 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 99%/100% lef
 | Source | Data | Auth Required |
 |--------|------|---------------|
 | Rollout logs (`~/.codex/sessions/`) | Token usage, rate limits, session count, model (interactive Codex TUI) | None |
-| App-server DB (`~/.codex/logs_2.sqlite`) | Rate limits + model when Codex runs via the app-server / Claude Code codex plugin (0.140+); effort from `~/.codex/config.toml` | None (Node ≥ 22.5 or `sqlite3` CLI) |
+| App-server DB (`~/.codex/logs_2.sqlite`) | Rate limits + model for Codex **0.140–0.141** via the app-server / codex plugin | None (Node ≥ 22.5 or `sqlite3` CLI) |
+| Codex app-server RPC (`codex app-server`) | Rate limits for Codex **0.142+** (which writes none to disk); cached 5 min, refreshed in the background; model/effort from `~/.codex/config.toml` | None (Codex CLI on PATH) |
 | OpenAI Usage API (`/v1/organization/costs`) | Dollar costs by billing line item | Admin API key |
 | OpenAI Usage API (`/v1/organization/usage/completions`) | Org-wide token usage by model | Admin API key |
 
@@ -215,6 +216,12 @@ Substitute `codex-hud` with your marketplace alias — `claude-community` for An
 codex-hud was inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud) — which solved the same usage-visibility problem for Claude Code itself. codex-hud extends that idea to OpenAI Codex and integrates with claude-hud via the included wrapper script when both are installed.
 
 ## Changelog
+
+### v0.10.0
+
+- **Codex 0.142+ support.** Codex 0.142 stopped writing rate limits to disk entirely (it fetches them live and hands them to clients over the app-server). codex-hud now reads them by calling `codex app-server` JSON-RPC `account/rateLimits/read` itself, caching the result (5-min TTL) and refreshing in a detached background process so the statusline stays fast. Fixes the disappearing 5h / Weekly bars on 0.142.
+- Maps the new camelCase fields (`usedPercent` / `windowDurationMins` / `resetsAt` / `rateLimitReachedType`); model + effort fall back to `~/.codex/config.toml` since the RPC doesn't return them.
+- Source priority is newest-wins across rollout logs, `logs_2.sqlite` (0.140–0.141), and the app-server RPC (0.142+), so it works across Codex versions.
 
 ### v0.9.0
 

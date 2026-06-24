@@ -9,6 +9,15 @@ function getConfigDir(): string {
   return join(claudeConfigDir, "plugins", "codex-hud");
 }
 
+/** Plugin dir for caches (rate-limit snapshot etc.); created 0700 on demand. */
+export function getCacheDir(): string {
+  const dir = getConfigDir();
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
+  }
+  return dir;
+}
+
 function getConfigPath(): string {
   return join(getConfigDir(), "config.json");
 }

@@ -10,6 +10,7 @@ import {
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { readDbTelemetry } from "./codex-db.js";
+import { readAppServerTelemetry } from "./codex-appserver.js";
 import type {
   DateRange,
   ParsedSession,
@@ -297,9 +298,11 @@ export function aggregateLocalUsage(range: DateRange): AggregatedUsage {
     }
   }
 
-  // Codex 0.140+ run via the app-server (the Claude Code codex plugin) doesn't
-  // write rate limits to rollout files — it logs them to ~/.codex/logs_2.sqlite.
-  // Merge that snapshot in if it's fresher than anything from the rollouts.
+  // App-server / Claude Code codex plugin path (Codex 0.140+) doesn't write
+  // rate limits to rollout files. Two sources, newest-wins:
+  //  - 0.140: logged the codex.rate_limits event to ~/.codex/logs_2.sqlite
+  //  - 0.142+: nothing on disk — must ask the app-server over JSON-RPC, which
+  //    codex-appserver caches (refreshed in the background).
   const db = readDbTelemetry();
   if (db) {
     if (db.timestampMs > latestRlTimestamp) {
@@ -307,10 +310,22 @@ export function aggregateLocalUsage(range: DateRange): AggregatedUsage {
       latestRlTimestamp = db.timestampMs;
     }
     if (db.model && db.timestampMs > latestModelTimestamp) {
-      // Model from the log; effort from the Codex config (config.toml).
       latestModel = { model: db.model, effort: db.effort };
       latestModelTimestamp = db.timestampMs;
     }
+  }
+
+  const app = readAppServerTelemetry();
+  if (app && app.timestampMs > latestRlTimestamp) {
+    latestRateLimits = app.rateLimits;
+    latestRlTimestamp = app.timestampMs;
+  }
+  // Model/effort: the app-server RPC doesn't return them and 0.142 logs
+  // nothing, so fall back to the configured values when we have no fresher
+  // model from a rollout/db source.
+  if (app && app.model && app.timestampMs > latestModelTimestamp) {
+    latestModel = { model: app.model, effort: app.effort };
+    latestModelTimestamp = app.timestampMs;
   }
 
   return {

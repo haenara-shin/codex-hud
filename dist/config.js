@@ -5,6 +5,14 @@ function getConfigDir() {
     const claudeConfigDir = process.env["CLAUDE_CONFIG_DIR"] || join(homedir(), ".claude");
     return join(claudeConfigDir, "plugins", "codex-hud");
 }
+/** Plugin dir for caches (rate-limit snapshot etc.); created 0700 on demand. */
+export function getCacheDir() {
+    const dir = getConfigDir();
+    if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true, mode: 0o700 });
+    }
+    return dir;
+}
 function getConfigPath() {
     return join(getConfigDir(), "config.json");
 }

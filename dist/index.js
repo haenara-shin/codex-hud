@@ -365,6 +365,22 @@ async function main() {
             }
             break;
         }
+        case "refresh-ratelimits": {
+            // Detached background helper: fetch live rate limits from the Codex
+            // app-server (~1s) and write them to the cache for the next render.
+            const { fetchRateLimitStdout, writeRateLimitCacheFrom } = await import("./codex-appserver.js");
+            const out = await fetchRateLimitStdout();
+            const ok = out ? writeRateLimitCacheFrom(out) : false;
+            if (rest.includes("--json")) {
+                console.log(JSON.stringify({ ok }));
+            }
+            else {
+                console.log(ok ? "Rate-limit cache updated." : "Could not fetch rate limits.");
+            }
+            if (!ok)
+                process.exit(1);
+            break;
+        }
         case "preview": {
             // Plain-text render of sample data with ad-hoc overrides, for the
             // configure flow's live previews. e.g. preview --set layout=compact

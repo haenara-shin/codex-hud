@@ -185,7 +185,8 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 99%/100% lef
 | 소스 | 데이터 | 인증 필요 |
 |------|--------|-----------|
 | Rollout 로그 (`~/.codex/sessions/`) | 토큰 사용량, 레이트 리밋, 세션 수, 모델 (인터랙티브 Codex TUI) | 없음 |
-| App-server DB (`~/.codex/logs_2.sqlite`) | app-server / Claude Code codex 플러그인(0.140+) 경로의 레이트 리밋·모델; effort는 `~/.codex/config.toml` | 없음 (Node ≥ 22.5 또는 `sqlite3` CLI) |
+| App-server DB (`~/.codex/logs_2.sqlite`) | Codex **0.140–0.141** app-server/codex 플러그인 경로의 레이트 리밋·모델 | 없음 (Node ≥ 22.5 또는 `sqlite3` CLI) |
+| Codex app-server RPC (`codex app-server`) | Codex **0.142+**(디스크에 안 남김)의 레이트 리밋; 5분 캐시, 백그라운드 갱신; 모델/effort는 `~/.codex/config.toml` | 없음 (Codex CLI가 PATH에) |
 | OpenAI Usage API (`/v1/organization/costs`) | 청구 항목별 달러 비용 | Admin API key |
 | OpenAI Usage API (`/v1/organization/usage/completions`) | 조직 전체 토큰 사용량 | Admin API key |
 
@@ -214,6 +215,12 @@ Codex today: $1.23 | 1.8M tokens (1.4M cached) | 3 sessions | Rate: 99%/100% lef
 codex-hud는 Claude Code 자체의 사용량 가시성 문제를 statusline으로 해결한 [claude-hud](https://github.com/jarrodwatts/claude-hud)에서 영감을 받아 만들어졌습니다. 같은 아이디어를 OpenAI Codex로 확장한 것이며, 두 플러그인이 함께 설치된 경우 wrapper 스크립트로 자연스럽게 통합됩니다.
 
 ## 변경 이력
+
+### v0.10.0
+
+- **Codex 0.142+ 지원.** 0.142부터 rate limit을 디스크에 전혀 안 남기고 app-server를 통해 라이브로만 전달합니다. codex-hud가 직접 `codex app-server` JSON-RPC `account/rateLimits/read`를 호출해 읽고, 결과를 캐시(5분 TTL)한 뒤 detached 백그라운드로 갱신해 statusline은 빠르게 유지합니다. 0.142에서 5h/Weekly 바가 사라지던 문제 해결.
+- 새 camelCase 필드(`usedPercent`/`windowDurationMins`/`resetsAt`/`rateLimitReachedType`) 매핑; RPC가 모델/effort를 안 주므로 `~/.codex/config.toml`에서 폴백.
+- rollout 로그 / `logs_2.sqlite`(0.140–0.141) / app-server RPC(0.142+) 중 가장 신선한 것 우선 → Codex 버전 무관 동작.
 
 ### v0.9.0
 
